@@ -1,6 +1,7 @@
 // Home page: list, create, rename, delete and import matrices.
 
 import { api } from "./api.js";
+import { initThemeToggle } from "./theme.js";
 import { confirmDialog, el, errorMessage, formatDateTime, promptDialog, toast } from "./ui.js";
 
 const listEl = document.getElementById("matrix-list");
@@ -141,6 +142,7 @@ async function importBackup(file) {
 
 // --- Wiring -----------------------------------------------------------------
 
+initThemeToggle(document.getElementById("theme-toggle"));
 newButton.addEventListener("click", createMatrix);
 importButton.addEventListener("click", () => importInput.click());
 importInput.addEventListener("change", () => {

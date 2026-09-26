@@ -31,10 +31,15 @@
   margin: 24px auto;
 }
 
+/* The preview is "paper": always light, even with the dark screen theme.
+   `color` is set again because the inherited value was resolved as dark. */
 #print-content {
+  color-scheme: light;
   padding: 16px;
+  color: var(--color-text);
   background: #fff;
   border: 1px solid var(--color-border);
+  box-shadow: var(--shadow);
 }
 
 /* --- Header -------------------------------------------------------------- */
@@ -215,6 +220,7 @@
   #print-content {
     padding: 0;
     border: none;
+    box-shadow: none;
   }
 
   /* Repeat headers on every page and never split a row across pages. */

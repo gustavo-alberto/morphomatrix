@@ -6,6 +6,7 @@
 
 import { ApiError, api } from "./api.js";
 import { NO_COMBINATION, PARAMETER_VALUES, columnLabel, getCell, photoUrl } from "./matrix-utils.js";
+import { initThemeToggle } from "./theme.js";
 import { el, errorMessage, formatDateTime } from "./ui.js";
 
 const params = new URLSearchParams(window.location.search);
@@ -218,4 +219,5 @@ async function main() {
   print();
 }
 
+initThemeToggle(document.getElementById("theme-toggle"));
 main();

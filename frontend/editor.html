@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
   <title>Editor · Morphomatrix</title>
+  <!-- Apply the saved theme before first paint (see js/theme.js). -->
+  <script>try{var t=localStorage.getItem("morphomatrix.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
   <script type="module" src="js/editor.js"></script>
@@ -14,9 +17,12 @@
       <a class="back-link" href="./">← Matrizes</a>
       <h1 class="app-title matrix-title" id="matrix-title"></h1>
     </div>
-    <div class="toolbar" id="editor-toolbar" hidden>
-      <button type="button" class="btn btn-primary" id="export-pdf">Exportar PDF</button>
-      <a class="btn" id="export-backup" download>Exportar backup</a>
+    <div class="header-end">
+      <div class="toolbar" id="editor-toolbar" hidden>
+        <button type="button" class="btn btn-primary" id="export-pdf">Exportar PDF</button>
+        <a class="btn" id="export-backup" download>Exportar backup</a>
+      </div>
+      <button type="button" class="btn btn-ghost" id="theme-toggle">Tema</button>
     </div>
   </header>
 

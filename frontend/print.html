@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
   <title>Impressão · Morphomatrix</title>
+  <!-- Apply the saved theme before first paint (see js/theme.js). -->
+  <script>try{var t=localStorage.getItem("morphomatrix.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/print.css">
@@ -17,6 +20,7 @@
       No diálogo de impressão, escolha o destino "Salvar como PDF", o tamanho do papel (A3 ou A4),
       a orientação e a escala.
     </p>
+    <button type="button" class="btn btn-ghost" id="theme-toggle">Tema</button>
   </div>
 
   <main class="print-page">

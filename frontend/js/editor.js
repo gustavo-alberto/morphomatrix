@@ -11,6 +11,7 @@ import {
   photoUrl,
   printUrl,
 } from "./matrix-utils.js";
+import { initThemeToggle } from "./theme.js";
 import {
   NAME_MAX_LENGTH,
   choiceDialog,
@@ -483,14 +484,22 @@ function cellDescription(row, column, cell, stored) {
   return `${base}: ${cell.solution_name || "sem nome"}${params ? ` (${params})` : ""}`;
 }
 
-/** Colored dots for every combination this cell belongs to. */
-function renderMemberships(memberships) {
+/**
+ * Colored dots for every combination this cell belongs to. The active
+ * combination's dot carries a check mark (not relying on color alone).
+ */
+function renderMemberships(memberships, activeId) {
   if (!memberships.length) return null;
   return el(
     "span",
     { class: "cell-combos", "aria-hidden": "true" },
     ...memberships.map((c) => {
-      const dot = el("span", { class: "combo-dot", title: c.name });
+      const isActive = c.id === activeId;
+      const dot = el("span", {
+        class: isActive ? "combo-dot is-active" : "combo-dot",
+        title: c.name,
+        text: isActive ? "✓" : null,
+      });
       dot.style.setProperty("--combo-color", c.color);
       return dot;
     }),
@@ -526,7 +535,7 @@ function renderCell(row, column) {
         "aria-pressed": active ? String(selected) : null,
         onClick: () => (active ? toggleCell(row, column) : editCell(row, column)),
       },
-      renderMemberships(memberships),
+      renderMemberships(memberships, active?.id),
       ...content,
     ),
     // While selecting, the cell click toggles; editing needs its own button.
@@ -688,6 +697,7 @@ function render() {
 
 // --- Bootstrap --------------------------------------------------------------
 
+initThemeToggle(document.getElementById("theme-toggle"));
 document.getElementById("export-pdf").addEventListener("click", exportPdf);
 
 if (!matrixId) showFatal(null);

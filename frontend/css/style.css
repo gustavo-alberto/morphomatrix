@@ -1,22 +1,48 @@
-/* Morphomatrix — base styles (screen). */
+/* Morphomatrix — base styles (screen).
+ *
+ * Theming: colors use light-dark(), resolved from the element's color-scheme.
+ * - default: follows the OS preference (light dark);
+ * - <html data-theme="light|dark">: forced by the theme toggle;
+ * - any subtree can opt back into light (e.g. the print "paper") with
+ *   `color-scheme: light`.
+ */
 
 :root {
-  --color-bg: #f7f7f5;
-  --color-surface: #ffffff;
-  --color-border: #deded9;
-  --color-border-strong: #c4c4bd;
-  --color-text: #1f2328;
-  --color-text-muted: #5f6368;
+  color-scheme: light dark;
+
+  --color-bg: light-dark(#f7f7f5, #151618);
+  --color-surface: light-dark(#ffffff, #1e2023);
+  /* Elevated surfaces (dialogs) are lighter than the page in dark mode. */
+  --color-surface-raised: light-dark(#ffffff, #26292d);
+  /* Table headers, photo wells. */
+  --color-surface-muted: light-dark(#f1f1ed, #282b2f);
+  --color-surface-subtle: light-dark(#f7f7f4, #222428);
+  --color-hover: light-dark(#f0f0ec, #2e3136);
+  --color-hover-accent: light-dark(#f5f8fc, #222b35);
+  --color-selected: light-dark(#eef4fb, #1d2c3d);
+  --color-border: light-dark(#deded9, #35383d);
+  --color-border-strong: light-dark(#c4c4bd, #4b4f56);
+  --color-text: light-dark(#1f2328, #e4e4e1);
+  --color-text-muted: light-dark(#5f6368, #a3a7ad);
+  --color-link: light-dark(#2f6fb0, #84b5ec);
+  /* Button fill: same in both schemes (white text keeps >= 4.5:1). */
   --color-primary: #2f6fb0;
-  --color-primary-hover: #255a90;
+  --color-primary-hover: light-dark(#255a90, #28629c);
   --color-danger: #b42318;
   --color-danger-hover: #912018;
+  --color-danger-text: light-dark(#b42318, #ff8f85);
+  --color-danger-soft: light-dark(#fdf1f0, #3a2222);
   --color-success: #1e7a46;
-  --color-focus: #2f6fb0;
+  --color-focus: light-dark(#2f6fb0, #84b5ec);
+  --color-toast: light-dark(#2d3136, #383c42);
+  --color-backdrop: light-dark(rgb(20 20 20 / 0.35), rgb(0 0 0 / 0.6));
+  --color-dot-ring: light-dark(rgb(0 0 0 / 0.15), rgb(255 255 255 / 0.28));
+  --color-shadow: light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.35));
+  --color-shadow-strong: light-dark(rgb(0 0 0 / 0.18), rgb(0 0 0 / 0.55));
 
   --radius: 6px;
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 2px 8px rgb(0 0 0 / 0.04);
-  --shadow-dialog: 0 10px 40px rgb(0 0 0 / 0.18);
+  --shadow: 0 1px 2px var(--color-shadow), 0 2px 8px var(--color-shadow);
+  --shadow-dialog: 0 10px 40px var(--color-shadow-strong);
 
   --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
@@ -27,6 +53,22 @@
   --scale-4: #f39c4a;
   --scale-5: #e0584a;
   --scale-text: #1f2328;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Paper is always light, regardless of the screen theme. */
+@media print {
+  :root,
+  :root[data-theme] {
+    color-scheme: light;
+  }
 }
 
 *,
@@ -45,7 +87,7 @@ body {
 }
 
 a {
-  color: var(--color-primary);
+  color: var(--color-link);
 }
 
 :focus-visible {
@@ -76,6 +118,18 @@ a {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.header-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.toolbar[hidden] {
+  display: none;
 }
 
 .page {
@@ -140,7 +194,22 @@ a {
 }
 
 .btn:hover {
-  background: #f0f0ec;
+  background: var(--color-hover);
+}
+
+/* Low-emphasis button (e.g. theme toggle). */
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+.btn-ghost:hover {
+  border-color: var(--color-border);
+}
+
+.theme-icon {
+  font-size: 15px;
+  line-height: 1;
 }
 
 .btn:disabled {
@@ -171,12 +240,12 @@ a {
 }
 
 .btn-danger-outline {
-  color: var(--color-danger);
+  color: var(--color-danger-text);
 }
 
 .btn-danger-outline:hover {
-  background: #fdf1f0;
-  border-color: var(--color-danger);
+  background: var(--color-danger-soft);
+  border-color: var(--color-danger-text);
 }
 
 /* --- Matrix list --------------------------------------------------------- */
@@ -218,7 +287,7 @@ a {
 }
 
 .matrix-name:hover {
-  color: var(--color-primary);
+  color: var(--color-link);
   text-decoration: underline;
 }
 
@@ -264,14 +333,14 @@ a {
   width: min(440px, calc(100vw - 32px));
   padding: 20px 22px;
   color: var(--color-text);
-  background: var(--color-surface);
-  border: none;
+  background: var(--color-surface-raised);
+  border: 1px solid light-dark(transparent, var(--color-border));
   border-radius: 10px;
   box-shadow: var(--shadow-dialog);
 }
 
 .dialog::backdrop {
-  background: rgb(20 20 20 / 0.35);
+  background: var(--color-backdrop);
 }
 
 .dialog-title {
@@ -307,12 +376,12 @@ a {
 }
 
 .choice-option:hover {
-  background: #f5f8fc;
+  background: var(--color-hover-accent);
 }
 
 .choice-option:has(input:checked) {
-  background: #eef4fb;
-  border-color: var(--color-primary);
+  background: var(--color-selected);
+  border-color: var(--color-focus);
 }
 
 .choice-option input {
@@ -345,8 +414,9 @@ a {
   max-width: 380px;
   padding: 10px 14px;
   font-size: 14px;
-  color: #fff;
-  background: #2d3136;
+  color: #f4f4f2;
+  background: var(--color-toast);
+  border: 1px solid light-dark(transparent, var(--color-border-strong));
   border-left: 4px solid #8a9199;
   border-radius: var(--radius);
   box-shadow: var(--shadow-dialog);
@@ -414,8 +484,8 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   font: inherit;
   font-size: 13px;
@@ -429,7 +499,7 @@ a {
 
 .icon-btn:hover:not(:disabled) {
   color: var(--color-text);
-  background: #ecece8;
+  background: var(--color-hover);
   border-color: var(--color-border);
 }
 
@@ -441,7 +511,7 @@ a {
 .form-error {
   margin: 12px 0 0;
   font-size: 14px;
-  color: var(--color-danger);
+  color: var(--color-danger-text);
 }
 
 .form-error[hidden] {
@@ -535,11 +605,19 @@ a {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--color-text-muted);
-  background: #f1f1ed;
+  background: var(--color-surface-muted);
 }
 
 .corner-header {
   vertical-align: bottom;
+}
+
+/* Keep function names visible while scrolling wide matrices horizontally. */
+.matrix-table .corner-header,
+.matrix-table .row-header {
+  position: sticky;
+  left: 0;
+  z-index: 2;
 }
 
 .matrix-table .solutions-header {
@@ -560,7 +638,7 @@ a {
 
 .matrix-table .col-header {
   padding: 6px 8px 6px 12px;
-  background: #f7f7f4;
+  background: var(--color-surface-subtle);
 }
 
 .header-content {
@@ -593,7 +671,7 @@ a {
   min-width: 170px;
   padding: 8px 8px 8px 12px;
   text-align: left;
-  background: #f7f7f4;
+  background: var(--color-surface-subtle);
 }
 
 .row-header-content {
@@ -630,12 +708,14 @@ a {
   width: 200px;
   min-width: 180px;
   max-width: 240px;
+  /* Lets the button's height: 100% fill the whole row (table height hack). */
+  height: 1px;
   background: var(--color-surface);
 }
 
-.cell-placeholder {
+.matrix-table .cell-placeholder {
   min-height: 60px;
-  background: #fafaf8;
+  background: var(--color-surface-subtle);
 }
 
 .cell-button {
@@ -655,7 +735,7 @@ a {
 }
 
 .cell-button:hover {
-  background: #f5f8fc;
+  background: var(--color-hover-accent);
 }
 
 .cell-button:focus-visible {
@@ -672,7 +752,7 @@ a {
   width: 100%;
   height: 110px;
   object-fit: contain;
-  background: #f1f1ed;
+  background: var(--color-surface-muted);
   border-radius: 4px;
 }
 
@@ -765,8 +845,9 @@ a {
   border-color: var(--color-border-strong);
 }
 
+/* Inverted colors: works in both schemes. */
 .combo-tab[aria-pressed="true"] {
-  color: #fff;
+  color: var(--color-bg);
   background: var(--color-text);
   border-color: var(--color-text);
 }
@@ -791,11 +872,25 @@ a {
   height: 10px;
   background: var(--combo-color);
   border-radius: 50%;
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.15);
+  box-shadow: 0 0 0 1px var(--color-dot-ring);
 }
 
 .combo-tab[aria-pressed="true"] .combo-dot {
-  box-shadow: 0 0 0 2px #fff;
+  box-shadow: 0 0 0 2px var(--color-bg);
+}
+
+/* Dot of the active combination on a selected cell: a check mark, so the
+   selection is not conveyed by color alone. */
+.combo-dot.is-active {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
 }
 
 .cell-combos {
@@ -809,19 +904,17 @@ a {
 }
 
 .cell-selectable .cell-button:hover {
-  background: color-mix(in srgb, var(--combo-color) 8%, white);
+  background: color-mix(in srgb, var(--combo-color) 8%, var(--color-surface));
 }
 
+/* Outline on the <td> (not the button) so it spans the full row height. */
 .matrix-table .cell-selected {
-  background: color-mix(in srgb, var(--combo-color) 14%, white);
-}
-
-.cell-selected .cell-button {
+  background: color-mix(in srgb, var(--combo-color) 16%, var(--color-surface));
   box-shadow: inset 0 0 0 3px var(--combo-color);
 }
 
 .cell-selected .cell-button:hover {
-  background: color-mix(in srgb, var(--combo-color) 20%, white);
+  background: color-mix(in srgb, var(--combo-color) 22%, var(--color-surface));
 }
 
 /* Keep the first line clear of the edit button. */
@@ -833,7 +926,7 @@ a {
   position: absolute;
   top: 6px;
   right: 6px;
-  background: rgb(255 255 255 / 0.9);
+  background: var(--color-surface);
   border-color: var(--color-border);
 }
 
@@ -860,7 +953,7 @@ a {
   justify-content: center;
   height: 200px;
   overflow: hidden;
-  background: #f1f1ed;
+  background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
 }
@@ -895,7 +988,7 @@ a {
 
 .param-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto 26px;
+  grid-template-columns: minmax(0, 1fr) auto 28px;
   gap: 10px;
   align-items: center;
   min-width: 0;
@@ -927,19 +1020,21 @@ a {
   height: 30px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--scale-text);
-  background: color-mix(in srgb, var(--scale-color) 25%, white);
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--scale-color) 25%, var(--color-surface-raised));
   border: 2px solid transparent;
   border-radius: 5px;
 }
 
 .scale-option:hover span {
-  background: color-mix(in srgb, var(--scale-color) 55%, white);
+  background: color-mix(in srgb, var(--scale-color) 50%, var(--color-surface-raised));
 }
 
+/* Full scale color always gets dark text (the scale colors are light). */
 .scale-option input:checked + span {
+  color: var(--scale-text);
   background: var(--scale-color);
-  border-color: var(--scale-text);
+  border-color: var(--color-text);
 }
 
 .scale-option input:focus-visible + span {

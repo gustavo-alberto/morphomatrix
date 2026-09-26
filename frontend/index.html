@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
   <title>Morphomatrix</title>
+  <!-- Apply the saved theme before first paint (see js/theme.js). -->
+  <script>try{var t=localStorage.getItem("morphomatrix.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
   <script type="module" src="js/home.js"></script>
@@ -11,10 +14,13 @@
 <body>
   <header class="app-header">
     <h1 class="app-title">Morphomatrix</h1>
-    <div class="toolbar">
-      <button type="button" class="btn btn-primary" id="new-matrix-btn">Nova matriz</button>
-      <button type="button" class="btn" id="import-btn">Importar</button>
-      <input type="file" id="import-input" accept=".zip,application/zip" hidden>
+    <div class="header-end">
+      <div class="toolbar">
+        <button type="button" class="btn btn-primary" id="new-matrix-btn">Nova matriz</button>
+        <button type="button" class="btn" id="import-btn">Importar</button>
+        <input type="file" id="import-input" accept=".zip,application/zip" hidden>
+      </div>
+      <button type="button" class="btn btn-ghost" id="theme-toggle">Tema</button>
     </div>
   </header>
 
