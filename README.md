@@ -50,7 +50,7 @@ Button names below are shown as they appear in the English interface.
 - **+ Function** adds a row (function); **+ Solution** adds a column (solution). Columns are labeled S1, S2, ... by position.
 - Click a function name to rename it (Enter saves, Esc cancels).
 - Use the arrows to reorder rows and columns, and ✕ to delete them. Deleting a row or column also removes it from any combination.
-- Click a cell to edit it: photo (JPG/PNG, up to 5MB), solution name and parameters on a 1–5 scale (1 = best, 5 = worst). Use **+ Add parameter** for extra parameters. Changes apply on **Save**.
+- Click a cell to edit it: photo (JPG/PNG/WebP, up to 5MB), solution name and parameters on a 1–5 scale (1 = best, 5 = worst). Use **+ Add parameter** for extra parameters. Changes apply on **Save**.
 
 ### Combinations
 

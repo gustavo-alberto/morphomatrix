@@ -17,7 +17,7 @@ import {
 } from "./matrix-utils.js";
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
-const PHOTO_TYPES = ["image/jpeg", "image/png"];
+const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 // Local id for each parameter row in the dialog (not the parameter `key`).
 let uidCounter = 0;

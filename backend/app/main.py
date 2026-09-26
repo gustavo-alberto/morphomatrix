@@ -61,7 +61,7 @@ async def photo_too_large_handler(_: Request, __: PhotoTooLargeError) -> JSONRes
 async def unsupported_photo_handler(_: Request, __: UnsupportedPhotoTypeError) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-        content={"detail": "Only JPG and PNG photos are accepted"},
+        content={"detail": "Only JPG, PNG and WebP photos are accepted"},
     )
 
 

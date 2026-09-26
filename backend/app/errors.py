@@ -24,7 +24,7 @@ class PhotoTooLargeError(Exception):
 
 
 class UnsupportedPhotoTypeError(Exception):
-    """Uploaded file is not a JPG/PNG image. Maps to 415."""
+    """Uploaded file is not a JPG/PNG/WebP image. Maps to 415."""
 
 
 class InvalidBackupError(Exception):
