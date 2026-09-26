@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title data-i18n="page.print">Impressão · Morphomatrix</title>
+  <!-- Apply the saved theme and hide untranslated text before first paint (see js/theme.js, js/i18n.js). -->
+  <script>document.documentElement.classList.add("i18n-pending");try{var t=localStorage.getItem("morphomatrix.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/print.css">
+  <script type="module" src="js/print.js"></script>
+</head>
+<body class="print-body">
+  <div class="print-toolbar" id="print-toolbar" hidden>
+    <button type="button" class="btn btn-primary" id="print-btn" data-i18n="print.print">Imprimir / Salvar PDF</button>
+    <a class="btn" id="back-to-editor" href="./" data-i18n="print.backToEditor">Voltar ao editor</a>
+    <p class="hint" data-i18n="print.hint">
+      No diálogo de impressão, escolha o destino "Salvar como PDF", o tamanho do papel (A3 ou A4),
+      a orientação e a escala.
+    </p>
+    <div class="preferences">
+      <label class="visually-hidden" for="language-select" data-i18n="language.label">Idioma</label>
+      <select class="select" id="language-select"></select>
+      <button type="button" class="btn btn-ghost" id="theme-toggle" data-i18n="theme.title">Tema</button>
+    </div>
+  </div>
+
+  <main class="print-page">
+    <p id="print-status" class="empty-state" role="status" data-i18n="common.loading">Carregando…</p>
+    <div id="print-content" hidden></div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Morphomatrix</title>
+  <!-- Apply the saved theme and hide untranslated text before first paint (see js/theme.js, js/i18n.js). -->
+  <script>document.documentElement.classList.add("i18n-pending");try{var t=localStorage.getItem("morphomatrix.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/home.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <h1 class="app-title">Morphomatrix</h1>
+    <div class="header-end">
+      <div class="toolbar">
+        <button type="button" class="btn btn-primary" id="new-matrix-btn" data-i18n="home.newMatrix">Nova matriz</button>
+        <button type="button" class="btn" id="import-btn" data-i18n="home.import">Importar</button>
+        <input type="file" id="import-input" accept=".zip,application/zip" hidden>
+      </div>
+      <div class="preferences">
+        <label class="visually-hidden" for="language-select" data-i18n="language.label">Idioma</label>
+        <select class="select" id="language-select"></select>
+        <button type="button" class="btn btn-ghost" id="theme-toggle" data-i18n="theme.title">Tema</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <h2 class="section-title" data-i18n="home.sectionTitle">Matrizes</h2>
+    <p id="list-status" class="empty-state" role="status" data-i18n="common.loading">Carregando…</p>
+    <ul id="matrix-list" class="matrix-list" aria-label="Matrizes salvas" data-i18n-attr="aria-label:home.listLabel"></ul>
+  </main>
+
+  <div id="toast-region" class="toast-region" aria-live="polite"></div>
+</body>
+</html>

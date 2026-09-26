@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title data-i18n="page.editor">Editor · Morphomatrix</title>
+  <!-- Apply the saved theme and hide untranslated text before first paint (see js/theme.js, js/i18n.js). -->
+  <script>document.documentElement.classList.add("i18n-pending");try{var t=localStorage.getItem("morphomatrix.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/editor.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-start">
+      <a class="back-link" href="./" data-i18n="editor.back">← Matrizes</a>
+      <h1 class="app-title matrix-title" id="matrix-title"></h1>
+    </div>
+    <div class="header-end">
+      <div class="toolbar" id="editor-toolbar" hidden>
+        <button type="button" class="btn btn-primary" id="export-pdf" data-i18n="editor.exportPdf">Exportar PDF</button>
+        <a class="btn" id="export-backup" download data-i18n="editor.exportBackup">Exportar backup</a>
+      </div>
+      <div class="preferences">
+        <label class="visually-hidden" for="language-select" data-i18n="language.label">Idioma</label>
+        <select class="select" id="language-select"></select>
+        <button type="button" class="btn btn-ghost" id="theme-toggle" data-i18n="theme.title">Tema</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="editor-page">
+    <p id="editor-status" class="empty-state" role="status" data-i18n="common.loading">Carregando…</p>
+    <div id="editor-content" hidden>
+      <div id="combination-bar" class="combination-bar"></div>
+      <p id="editor-hint" class="hint editor-hint"></p>
+      <div id="table-wrap" class="table-wrap"></div>
+    </div>
+  </main>
+
+  <div id="toast-region" class="toast-region" aria-live="polite"></div>
+</body>
+</html>
