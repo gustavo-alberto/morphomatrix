@@ -9,6 +9,14 @@ export const PARAMETER_VALUES = [1, 2, 3, 4, 5];
 
 export const cellKey = (rowId, columnId) => `${rowId}_${columnId}`;
 
+// Query value used by the print view for "no highlighted combination".
+export const NO_COMBINATION = "none";
+
+export function printUrl(matrixId, combinationId) {
+  const params = new URLSearchParams({ id: matrixId, combination: combinationId ?? NO_COMBINATION });
+  return `print.html?${params}`;
+}
+
 /** Column label derived from its position: S1, S2, ... */
 export const columnLabel = (column) => `S${column.order + 1}`;
 

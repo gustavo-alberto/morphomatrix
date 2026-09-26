@@ -2,8 +2,24 @@
 
 import { ApiError, api } from "./api.js";
 import { openCellDialog } from "./cell-dialog.js";
-import { columnLabel, getCell, isCellEmpty, moveId, photoUrl } from "./matrix-utils.js";
-import { NAME_MAX_LENGTH, confirmDialog, el, errorMessage, promptDialog, toast } from "./ui.js";
+import {
+  NO_COMBINATION,
+  columnLabel,
+  getCell,
+  isCellEmpty,
+  moveId,
+  photoUrl,
+  printUrl,
+} from "./matrix-utils.js";
+import {
+  NAME_MAX_LENGTH,
+  choiceDialog,
+  confirmDialog,
+  el,
+  errorMessage,
+  promptDialog,
+  toast,
+} from "./ui.js";
 
 const matrixId = new URLSearchParams(window.location.search).get("id");
 
@@ -302,6 +318,26 @@ async function deleteCombination(combination) {
     setMatrix(next, "combo-none");
     toast(`Combinação "${combination.name}" excluída.`, "success");
   }, combinationErrors);
+}
+
+// --- PDF export -------------------------------------------------------------
+
+async function exportPdf() {
+  const choice = await choiceDialog({
+    title: "Exportar PDF",
+    message:
+      "Escolha a combinação a destacar. A matriz completa será exibida. Tamanho do papel (A3/A4), orientação e escala são definidos no diálogo de impressão.",
+    options: [
+      { value: NO_COMBINATION, label: "Nenhuma (matriz sem destaque)" },
+      ...matrix.combinations.map((c) => ({ value: c.id, label: c.name, color: c.color })),
+    ],
+    value: activeCombination()?.id ?? NO_COMBINATION,
+    confirmLabel: "Abrir impressão",
+  });
+  if (choice === null) return;
+  const url = printUrl(matrixId, choice === NO_COMBINATION ? null : choice);
+  // New tab keeps the editor open; fall back to same tab if popups are blocked.
+  if (!window.open(url, "_blank")) window.location.href = url;
 }
 
 function selectCombination(id) {
@@ -651,6 +687,8 @@ function render() {
 }
 
 // --- Bootstrap --------------------------------------------------------------
+
+document.getElementById("export-pdf").addEventListener("click", exportPdf);
 
 if (!matrixId) showFatal(null);
 else reload();

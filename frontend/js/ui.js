@@ -164,6 +164,53 @@ export function promptDialog({
   });
 }
 
+/**
+ * Ask the user to pick one option. `options`: [{ value, label, color? }].
+ * Resolves to the chosen value, or null if cancelled.
+ */
+export function choiceDialog({
+  title,
+  message,
+  options,
+  value = options[0]?.value,
+  confirmLabel = "Confirmar",
+  cancelLabel = "Cancelar",
+}) {
+  return new Promise((resolve) => {
+    const titleId = uniqueId("dialog-title");
+    const groupName = uniqueId("choice");
+    const radios = options.map((option) => {
+      const radio = el("input", { type: "radio", name: groupName, value: option.value, checked: option.value === value });
+      const swatch = option.color ? el("span", { class: "combo-dot", "aria-hidden": "true" }) : null;
+      swatch?.style.setProperty("--combo-color", option.color);
+      return { radio, node: el("label", { class: "choice-option" }, radio, swatch, el("span", { text: option.label })) };
+    });
+
+    const dialog = el(
+      "dialog",
+      { class: "dialog", "aria-labelledby": titleId },
+      el(
+        "form",
+        { method: "dialog" },
+        el("h2", { id: titleId, class: "dialog-title", text: title }),
+        message ? el("p", { class: "dialog-message", text: message }) : null,
+        el("fieldset", { class: "choice-list" }, el("legend", { class: "visually-hidden", text: title }), ...radios.map((r) => r.node)),
+        el(
+          "div",
+          { class: "dialog-actions" },
+          el("button", { type: "submit", class: "btn", value: "cancel", text: cancelLabel }),
+          el("button", { type: "submit", class: "btn btn-primary", value: "confirm", text: confirmLabel }),
+        ),
+      ),
+    );
+    openDialog(dialog, (result) => {
+      const chosen = radios.find((r) => r.radio.checked);
+      resolve(result === "confirm" && chosen ? chosen.radio.value : null);
+    });
+    (radios.find((r) => r.radio.checked) ?? radios[0])?.radio.focus();
+  });
+}
+
 // --- Formatting -------------------------------------------------------------
 
 const dateTimeFormat = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });

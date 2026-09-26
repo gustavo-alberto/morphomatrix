@@ -1,0 +1,233 @@
+/* Print view (screen preview + @media print). Loaded after style.css. */
+
+.print-body {
+  background: var(--color-bg);
+}
+
+.print-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 24px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.print-toolbar[hidden] {
+  display: none;
+}
+
+.print-toolbar .hint {
+  flex: 1 1 320px;
+}
+
+.print-page {
+  padding: 20px 24px;
+}
+
+.print-page > .empty-state {
+  max-width: 880px;
+  margin: 24px auto;
+}
+
+#print-content {
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+}
+
+/* --- Header -------------------------------------------------------------- */
+
+.print-header {
+  margin-bottom: 10px;
+}
+
+.print-title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.print-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.print-highlight {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* --- Table --------------------------------------------------------------- */
+
+.print-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.print-table .functions-col {
+  width: 14%;
+}
+
+.print-table th,
+.print-table td {
+  padding: 5px 6px;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  border: 1px solid #b9b9b3;
+}
+
+.print-table thead th {
+  font-size: 11px;
+  font-weight: 600;
+  background: #f1f1ed;
+}
+
+.print-corner,
+.print-solutions {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.print-corner {
+  vertical-align: bottom !important;
+}
+
+.print-solutions {
+  text-align: center !important;
+}
+
+.print-row-title {
+  font-weight: 600;
+  background: #f7f7f4;
+}
+
+.print-cell {
+  position: relative;
+}
+
+/* With border-collapse, the wider border wins, so the highlight shows fully. */
+.print-cell.selected {
+  background: color-mix(in srgb, var(--combo-color) 16%, white);
+  border: 3px solid var(--combo-color);
+}
+
+.selected-mark {
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--combo-color);
+  border-radius: 50%;
+}
+
+.print-photo {
+  display: block;
+  width: 100%;
+  height: 28mm;
+  margin-bottom: 4px;
+  object-fit: contain;
+}
+
+.print-solution {
+  margin-bottom: 3px;
+  padding-right: 18px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.print-params {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.print-params li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 2px;
+  color: var(--color-text-muted);
+}
+
+.print-params .scale-badge,
+.print-legend .scale-badge {
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+}
+
+.print-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* --- Paper --------------------------------------------------------------- */
+
+/* Size and orientation are intentionally not set: the user picks them. */
+@page {
+  margin: 10mm;
+}
+
+@media print {
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-body {
+    background: #fff;
+  }
+
+  .print-toolbar {
+    display: none !important;
+  }
+
+  .print-page {
+    padding: 0;
+  }
+
+  #print-content {
+    padding: 0;
+    border: none;
+  }
+
+  /* Repeat headers on every page and never split a row across pages. */
+  .print-table thead {
+    display: table-header-group;
+  }
+
+  .print-table tr {
+    break-inside: avoid;
+  }
+
+  .print-header,
+  .print-legend {
+    break-inside: avoid;
+  }
+}

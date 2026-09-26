@@ -285,6 +285,41 @@ a {
   color: var(--color-text-muted);
 }
 
+.choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 50vh;
+  margin: 16px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  border: none;
+}
+
+.choice-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.choice-option:hover {
+  background: #f5f8fc;
+}
+
+.choice-option:has(input:checked) {
+  background: #eef4fb;
+  border-color: var(--color-primary);
+}
+
+.choice-option input {
+  margin: 0;
+  accent-color: var(--color-primary);
+}
+
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
