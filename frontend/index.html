@@ -4,11 +4,26 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Morphomatrix</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/home.js"></script>
 </head>
 <body>
-  <main>
-    <h1>Morphomatrix</h1>
-    <p>Estrutura base no ar. A lista de matrizes será implementada nas próximas etapas.</p>
+  <header class="app-header">
+    <h1 class="app-title">Morphomatrix</h1>
+    <div class="toolbar">
+      <button type="button" class="btn btn-primary" id="new-matrix-btn">Nova matriz</button>
+      <button type="button" class="btn" id="import-btn">Importar</button>
+      <input type="file" id="import-input" accept=".zip,application/zip" hidden>
+    </div>
+  </header>
+
+  <main class="page">
+    <h2 class="section-title">Matrizes</h2>
+    <p id="list-status" class="empty-state" role="status">Carregando…</p>
+    <ul id="matrix-list" class="matrix-list" aria-label="Matrizes salvas"></ul>
   </main>
+
+  <div id="toast-region" class="toast-region" aria-live="polite"></div>
 </body>
 </html>

@@ -1,0 +1,347 @@
+/* Morphomatrix — base styles (screen). */
+
+:root {
+  --color-bg: #f7f7f5;
+  --color-surface: #ffffff;
+  --color-border: #deded9;
+  --color-border-strong: #c4c4bd;
+  --color-text: #1f2328;
+  --color-text-muted: #5f6368;
+  --color-primary: #2f6fb0;
+  --color-primary-hover: #255a90;
+  --color-danger: #b42318;
+  --color-danger-hover: #912018;
+  --color-success: #1e7a46;
+  --color-focus: #2f6fb0;
+
+  --radius: 6px;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 2px 8px rgb(0 0 0 / 0.04);
+  --shadow-dialog: 0 10px 40px rgb(0 0 0 / 0.18);
+
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+a {
+  color: var(--color-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* --- Layout -------------------------------------------------------------- */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.section-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.empty-state {
+  margin: 0;
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius);
+}
+
+.empty-state[hidden] {
+  display: none;
+}
+
+.back-link {
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+/* --- Buttons ------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--color-text);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  transition: background-color 0.12s, border-color 0.12s;
+}
+
+.btn:hover {
+  background: #f0f0ec;
+}
+
+.btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.btn-primary {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+.btn-danger {
+  color: #fff;
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.btn-danger:hover {
+  background: var(--color-danger-hover);
+  border-color: var(--color-danger-hover);
+}
+
+.btn-danger-outline {
+  color: var(--color-danger);
+}
+
+.btn-danger-outline:hover {
+  background: #fdf1f0;
+  border-color: var(--color-danger);
+}
+
+/* --- Matrix list --------------------------------------------------------- */
+
+.matrix-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.matrix-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.matrix-info {
+  min-width: 0;
+}
+
+.matrix-name {
+  display: block;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matrix-name:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.matrix-meta {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.matrix-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+/* --- Forms --------------------------------------------------------------- */
+
+.field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.input {
+  width: 100%;
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+}
+
+.input:focus-visible {
+  outline-offset: 0;
+  border-color: var(--color-focus);
+}
+
+/* --- Dialogs ------------------------------------------------------------- */
+
+.dialog {
+  width: min(440px, calc(100vw - 32px));
+  padding: 20px 22px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: none;
+  border-radius: 10px;
+  box-shadow: var(--shadow-dialog);
+}
+
+.dialog::backdrop {
+  background: rgb(20 20 20 / 0.35);
+}
+
+.dialog-title {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.dialog-message {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+/* --- Toasts -------------------------------------------------------------- */
+
+.toast-region {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  max-width: 380px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #fff;
+  background: #2d3136;
+  border-left: 4px solid #8a9199;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-dialog);
+  animation: toast-in 0.18s ease-out;
+  pointer-events: auto;
+}
+
+.toast-success {
+  border-left-color: #4cc38a;
+}
+
+.toast-error {
+  border-left-color: #f97066;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+
+  .btn {
+    transition: none;
+  }
+}
+
+/* --- Small screens ------------------------------------------------------- */
+
+@media (max-width: 600px) {
+  .app-header,
+  .matrix-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
