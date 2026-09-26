@@ -4,7 +4,7 @@ import { ApiError, api } from "./api.js";
 import { openCellDialog } from "./cell-dialog.js";
 import {
   NO_COMBINATION,
-  columnLabel,
+  columnNumber,
   getCell,
   isCellEmpty,
   moveId,
@@ -12,7 +12,7 @@ import {
   photoUrl,
   printUrl,
 } from "./matrix-utils.js";
-import { applyStaticTranslations, initLanguageSelect, t } from "./i18n.js";
+import { applyStaticTranslations, initLanguageSelect, t, tn } from "./i18n.js";
 import { initThemeToggle } from "./theme.js";
 import { getDetailedView, initDetailedViewToggle } from "./view-prefs.js";
 import {
@@ -204,19 +204,43 @@ function addColumn() {
   });
 }
 
+const MAX_LISTED_SOLUTIONS = 3;
+
+/** "Motor, Manivela, Mola e mais 2" for the delete confirmation. */
+function columnSolutionsText(column) {
+  const names = matrix.rows
+    .map((row) => matrix.cells[`${row.id}_${column.id}`]?.solution_name)
+    .filter(Boolean);
+  if (!names.length) return t("editor.deleteColumnEmpty");
+  const listed = names.slice(0, MAX_LISTED_SOLUTIONS).join(", ");
+  const rest = names.length - MAX_LISTED_SOLUTIONS;
+  const list = rest > 0 ? tn("editor.deleteColumnMore", rest, { names: listed }) : listed;
+  return t("editor.deleteColumnSolutions", { names: list });
+}
+
 async function deleteColumn(column) {
-  const label = columnLabel(column);
-  const confirmed = await confirmDialog({
-    title: t("editor.deleteColumnTitle"),
-    message: t("editor.deleteColumnMessage", { label }),
-    confirmLabel: t("common.delete"),
-    danger: true,
-  });
+  // Columns have no visible name: highlight the one being deleted and list its
+  // solutions, so the user can tell which column the dialog refers to.
+  const nodes = [...tableWrap.querySelectorAll(`[data-column="${column.id}"]`)];
+  nodes.forEach((node) => node.classList.add("col-pending-delete"));
+  nodes[0]?.scrollIntoView({ block: "nearest", inline: "nearest" });
+
+  let confirmed;
+  try {
+    confirmed = await confirmDialog({
+      title: t("editor.deleteColumnTitle"),
+      message: `${t("editor.deleteColumnMessage")} ${columnSolutionsText(column)}`,
+      confirmLabel: t("common.delete"),
+      danger: true,
+    });
+  } finally {
+    nodes.forEach((node) => node.classList.remove("col-pending-delete"));
+  }
   if (!confirmed) return;
   run(async () => {
     const { matrix: next, affected_combinations: affected } = await api.deleteColumn(matrixId, column.id);
     setMatrix(next, "add-column");
-    toast(removalMessage(t("editor.columnDeleted", { label }), affected), "success");
+    toast(removalMessage(t("editor.columnDeleted"), affected), "success");
   }, { 404: t("editor.columnGone") });
 }
 
@@ -352,22 +376,24 @@ function iconButton({ label, symbol, focus, disabled = false, onClick }) {
   });
 }
 
-// Columns cannot be moved: a column spans every function, so reordering it
-// would shuffle the whole set of solutions. Only deletion is offered.
+/** "coluna 2 de 3": screen-reader position, since columns have no visible name. */
+const columnPosition = (column) =>
+  t("editor.columnPosition", { n: columnNumber(column), total: matrix.columns.length });
+
+// Columns are unnamed slots and cannot be moved (a column spans every
+// function, so reordering it would shuffle the whole set). Only deletion is offered.
 function renderColumnHeader(column) {
-  const label = columnLabel(column);
   return el(
     "th",
-    { scope: "col", class: "col-header" },
+    { scope: "col", class: "col-header", "data-column": column.id, "aria-label": columnPosition(column) },
     el(
       "div",
       { class: "header-content" },
-      el("span", { class: "col-label", text: label }),
       el(
         "div",
         { class: "header-controls" },
         iconButton({
-          label: t("editor.deleteColumnLabel", { label }),
+          label: t("editor.deleteColumnLabel", { position: columnPosition(column) }),
           symbol: "✕",
           focus: `col-delete-${column.id}`,
           onClick: () => deleteColumn(column),
@@ -454,7 +480,7 @@ function renderCellContent(cell, stored) {
   return parts;
 }
 
-const cellPosition = (row, column) => `${row.title}, ${columnLabel(column)}`;
+const cellPosition = (row, column) => `${row.title}, ${columnPosition(column)}`;
 
 function cellDescription(row, column, cell, stored) {
   const position = cellPosition(row, column);
@@ -512,7 +538,10 @@ function renderCell(row, column) {
 
   const td = el(
     "td",
-    { class: `cell${active ? " cell-selectable" : ""}${selected ? " cell-selected" : ""}` },
+    {
+      class: `cell${active ? " cell-selectable" : ""}${selected ? " cell-selected" : ""}`,
+      "data-column": column.id,
+    },
     el(
       "button",
       {

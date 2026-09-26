@@ -20,8 +20,14 @@ export function printUrl(matrixId, combinationId) {
   return `print.html?${params}`;
 }
 
-/** Column label derived from its position: S1, S2, ... */
+/**
+ * Column label derived from its position: S1, S2, ... Not shown in the UI
+ * (columns are unnamed slots); kept as an internal/debug reference.
+ */
 export const columnLabel = (column) => `S${column.order + 1}`;
+
+/** 1-based column position, used only in screen-reader text ("column 2 of 3"). */
+export const columnNumber = (column) => column.order + 1;
 
 /** Built-in parameters cannot be renamed or removed. */
 export const isBuiltInParameter = (parameter) => Boolean(parameter.key);

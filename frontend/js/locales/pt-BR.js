@@ -106,11 +106,16 @@ export default {
   "editor.addColumn": "+ Solução",
   "editor.addColumnLabel": "Adicionar coluna de solução",
   "editor.noSolutions": "Nenhuma solução",
-  "editor.deleteColumnLabel": "Excluir coluna {label}",
+  // Columns have no visible name; {position} is read by screen readers only.
+  "editor.columnPosition": "coluna {n} de {total}",
+  "editor.deleteColumnLabel": "Excluir {position}",
   "editor.deleteColumnTitle": "Excluir coluna",
-  "editor.deleteColumnMessage":
-    "A coluna {label} e todas as suas soluções (incluindo fotos) serão excluídas. As colunas seguintes serão renumeradas.",
-  "editor.columnDeleted": "Coluna {label} excluída.",
+  "editor.deleteColumnMessage": "A coluna destacada e todas as suas soluções (incluindo fotos) serão excluídas.",
+  "editor.deleteColumnSolutions": "Soluções nesta coluna: {names}.",
+  "editor.deleteColumnMore.one": "{names} e mais {count}",
+  "editor.deleteColumnMore.other": "{names} e mais {count}",
+  "editor.deleteColumnEmpty": "Esta coluna não tem soluções preenchidas.",
+  "editor.columnDeleted": "Coluna excluída.",
   "editor.columnGone": "Esta coluna já havia sido excluída.",
   "editor.removedFromCombinations": "{message} Seleção removida das combinações: {names}.",
 

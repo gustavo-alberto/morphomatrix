@@ -8,7 +8,6 @@ import { ApiError, api } from "./api.js";
 import {
   NO_COMBINATION,
   PARAMETER_VALUES,
-  columnLabel,
   getCell,
   parameterLabel,
   photoUrl,
@@ -108,15 +107,9 @@ function renderTable(matrix, combination) {
       el(
         "tr",
         {},
-        el("th", { scope: "col", rowspan: 2, class: "print-corner", text: t("table.functions") }),
+        el("th", { scope: "col", class: "print-corner", text: t("table.functions") }),
+        // Columns are unnamed: a single "Solutions" header spans them all.
         el("th", { scope: "colgroup", colspan: span, class: "print-solutions", text: t("table.solutions") }),
-      ),
-      el(
-        "tr",
-        {},
-        ...(columns.length
-          ? columns.map((c) => el("th", { scope: "col", text: columnLabel(c) }))
-          : [el("th", { text: "—" })]),
       ),
     ),
     el(

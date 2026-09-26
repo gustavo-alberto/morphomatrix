@@ -47,7 +47,7 @@ Button names below are shown as they appear in the English interface.
 
 ### Editing a matrix
 
-- **+ Function** adds a row (function); **+ Solution** adds a column (solution). Columns are labeled S1, S2, ... by position.
+- **+ Function** adds a row (function); **+ Solution** adds a column (solution). Columns have no name: each cell is identified by its function and its solution name.
 - Click a function name to rename it (Enter saves, Esc cancels).
 - Use the ↑ ↓ arrows to reorder functions. Solution columns keep their position, since each one spans every function. Use ✕ to delete a function or a column; this also removes it from any combination.
 - Click a cell to edit it: photo (JPG/PNG/WebP, up to 5MB), solution name and parameters on a 1–5 scale (1 = best, 5 = worst). Use **+ Add parameter** for extra parameters. Changes apply on **Save**.

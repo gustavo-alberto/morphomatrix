@@ -105,11 +105,16 @@ export default {
   "editor.addColumn": "+ Solution",
   "editor.addColumnLabel": "Add solution column",
   "editor.noSolutions": "No solutions",
-  "editor.deleteColumnLabel": "Delete column {label}",
+  // Columns have no visible name; {position} is read by screen readers only.
+  "editor.columnPosition": "column {n} of {total}",
+  "editor.deleteColumnLabel": "Delete {position}",
   "editor.deleteColumnTitle": "Delete column",
-  "editor.deleteColumnMessage":
-    "Column {label} and all its solutions (including photos) will be deleted. The following columns will be renumbered.",
-  "editor.columnDeleted": "Column {label} deleted.",
+  "editor.deleteColumnMessage": "The highlighted column and all its solutions (including photos) will be deleted.",
+  "editor.deleteColumnSolutions": "Solutions in this column: {names}.",
+  "editor.deleteColumnMore.one": "{names} and {count} more",
+  "editor.deleteColumnMore.other": "{names} and {count} more",
+  "editor.deleteColumnEmpty": "This column has no filled-in solutions.",
+  "editor.columnDeleted": "Column deleted.",
   "editor.columnGone": "This column had already been deleted.",
   "editor.removedFromCombinations": "{message} Selection removed from combinations: {names}.",
 

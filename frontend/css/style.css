@@ -742,16 +742,20 @@ a {
   background: var(--color-surface-subtle);
 }
 
+/* Column headers hold only the delete button (columns have no visible name). */
 .header-content {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 8px;
 }
 
-.col-label {
-  font-size: 14px;
-  font-weight: 600;
+/* Column being deleted, while the confirmation dialog is open. !important
+   keeps it above the combination highlight (.cell-selected), which is
+   declared later with the same specificity. */
+.matrix-table .col-pending-delete {
+  background: var(--color-danger-soft) !important;
+  box-shadow: inset 0 0 0 2px var(--color-danger-text) !important;
 }
 
 .matrix-table .col-placeholder {

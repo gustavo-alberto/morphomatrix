@@ -9,7 +9,6 @@ import { NAME_MAX_LENGTH, confirmDialog, el, errorMessage, toast } from "./ui.js
 import {
   DEFAULT_PARAMETER_VALUE,
   PARAMETER_VALUES,
-  columnLabel,
   getCell,
   isBuiltInParameter,
   parameterLabel,
@@ -265,7 +264,8 @@ export function openCellDialog(matrix, row, column) {
     const form = el(
       "form",
       { class: "cell-form", novalidate: true },
-      el("h2", { id: titleId, class: "dialog-title", text: `${row.title} · ${columnLabel(column)}` }),
+      // Columns have no visible name: the function title identifies the cell.
+      el("h2", { id: titleId, class: "dialog-title", text: row.title }),
       el(
         "section",
         { class: "cell-section", "aria-label": t("cell.photoSection") },
