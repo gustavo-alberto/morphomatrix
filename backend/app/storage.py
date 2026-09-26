@@ -3,7 +3,7 @@
 Layout on disk:
 
     MATRICES_DIR/{matrix_id}.json
-    MATRICES_DIR/{matrix_id}/uploads/*.jpg|png
+    MATRICES_DIR/{matrix_id}/uploads/*.jpg|png|webp
 
 Writes are atomic (temp file + os.replace) and every read-modify-write cycle
 is serialized by a process-wide lock, which is enough for a single-user app

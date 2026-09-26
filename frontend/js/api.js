@@ -54,7 +54,6 @@ export const api = {
 
   // Columns
   addColumn: (id) => request("POST", `${matrixPath(id)}/columns`),
-  reorderColumns: (id, ids) => request("PUT", `${matrixPath(id)}/columns/reorder`, { json: { ids } }),
   deleteColumn: (id, columnId) =>
     request("DELETE", `${matrixPath(id)}/columns/${encodeURIComponent(columnId)}`),
 

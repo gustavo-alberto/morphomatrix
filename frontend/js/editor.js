@@ -4,7 +4,7 @@ import { ApiError, api } from "./api.js";
 import { openCellDialog } from "./cell-dialog.js";
 import {
   NO_COMBINATION,
-  columnLabel,
+  columnNumber,
   getCell,
   isCellEmpty,
   moveId,
@@ -12,8 +12,9 @@ import {
   photoUrl,
   printUrl,
 } from "./matrix-utils.js";
-import { applyStaticTranslations, initLanguageSelect, t } from "./i18n.js";
+import { applyStaticTranslations, initLanguageSelect, t, tn } from "./i18n.js";
 import { initThemeToggle } from "./theme.js";
+import { getDetailedView, initDetailedViewToggle } from "./view-prefs.js";
 import {
   NAME_MAX_LENGTH,
   choiceDialog,
@@ -37,6 +38,8 @@ const tableWrap = document.getElementById("table-wrap");
 
 let matrix = null;
 let busy = false;
+// Detailed view adds parameters and combination dots to the cells.
+let detailedView = getDetailedView();
 
 // Active combination is remembered per matrix across reloads.
 const ACTIVE_COMBINATION_KEY = `morphomatrix.activeCombination.${matrixId}`;
@@ -201,34 +204,43 @@ function addColumn() {
   });
 }
 
-function moveColumn(index, delta) {
-  const ids = moveId(matrix.columns.map((c) => c.id), index, delta);
-  if (!ids) return;
-  const columnId = matrix.columns[index].id;
-  const direction = delta < 0 ? "left" : "right";
-  const opposite = delta < 0 ? "right" : "left";
-  run(async () => {
-    setMatrix(
-      await api.reorderColumns(matrixId, ids),
-      `col-${direction}-${columnId}`,
-      `col-${opposite}-${columnId}`,
-    );
-  });
+const MAX_LISTED_SOLUTIONS = 3;
+
+/** "Motor, Manivela, Mola e mais 2" for the delete confirmation. */
+function columnSolutionsText(column) {
+  const names = matrix.rows
+    .map((row) => matrix.cells[`${row.id}_${column.id}`]?.solution_name)
+    .filter(Boolean);
+  if (!names.length) return t("editor.deleteColumnEmpty");
+  const listed = names.slice(0, MAX_LISTED_SOLUTIONS).join(", ");
+  const rest = names.length - MAX_LISTED_SOLUTIONS;
+  const list = rest > 0 ? tn("editor.deleteColumnMore", rest, { names: listed }) : listed;
+  return t("editor.deleteColumnSolutions", { names: list });
 }
 
 async function deleteColumn(column) {
-  const label = columnLabel(column);
-  const confirmed = await confirmDialog({
-    title: t("editor.deleteColumnTitle"),
-    message: t("editor.deleteColumnMessage", { label }),
-    confirmLabel: t("common.delete"),
-    danger: true,
-  });
+  // Columns have no visible name: highlight the one being deleted and list its
+  // solutions, so the user can tell which column the dialog refers to.
+  const nodes = [...tableWrap.querySelectorAll(`[data-column="${column.id}"]`)];
+  nodes.forEach((node) => node.classList.add("col-pending-delete"));
+  nodes[0]?.scrollIntoView({ block: "nearest", inline: "nearest" });
+
+  let confirmed;
+  try {
+    confirmed = await confirmDialog({
+      title: t("editor.deleteColumnTitle"),
+      message: `${t("editor.deleteColumnMessage")} ${columnSolutionsText(column)}`,
+      confirmLabel: t("common.delete"),
+      danger: true,
+    });
+  } finally {
+    nodes.forEach((node) => node.classList.remove("col-pending-delete"));
+  }
   if (!confirmed) return;
   run(async () => {
     const { matrix: next, affected_combinations: affected } = await api.deleteColumn(matrixId, column.id);
     setMatrix(next, "add-column");
-    toast(removalMessage(t("editor.columnDeleted", { label }), affected), "success");
+    toast(removalMessage(t("editor.columnDeleted"), affected), "success");
   }, { 404: t("editor.columnGone") });
 }
 
@@ -364,35 +376,24 @@ function iconButton({ label, symbol, focus, disabled = false, onClick }) {
   });
 }
 
-function renderColumnHeader(column, index) {
-  const label = columnLabel(column);
-  const last = matrix.columns.length - 1;
+/** "coluna 2 de 3": screen-reader position, since columns have no visible name. */
+const columnPosition = (column) =>
+  t("editor.columnPosition", { n: columnNumber(column), total: matrix.columns.length });
+
+// Columns are unnamed slots and cannot be moved (a column spans every
+// function, so reordering it would shuffle the whole set). Only deletion is offered.
+function renderColumnHeader(column) {
   return el(
     "th",
-    { scope: "col", class: "col-header" },
+    { scope: "col", class: "col-header", "data-column": column.id, "aria-label": columnPosition(column) },
     el(
       "div",
       { class: "header-content" },
-      el("span", { class: "col-label", text: label }),
       el(
         "div",
         { class: "header-controls" },
         iconButton({
-          label: t("editor.moveLeft", { label }),
-          symbol: "←",
-          focus: `col-left-${column.id}`,
-          disabled: index === 0,
-          onClick: () => moveColumn(index, -1),
-        }),
-        iconButton({
-          label: t("editor.moveRight", { label }),
-          symbol: "→",
-          focus: `col-right-${column.id}`,
-          disabled: index === last,
-          onClick: () => moveColumn(index, 1),
-        }),
-        iconButton({
-          label: t("editor.deleteColumnLabel", { label }),
+          label: t("editor.deleteColumnLabel", { position: columnPosition(column) }),
           symbol: "✕",
           focus: `col-delete-${column.id}`,
           onClick: () => deleteColumn(column),
@@ -460,7 +461,7 @@ function renderCellContent(cell, stored) {
       ? el("span", { class: "cell-name", text: cell.solution_name })
       : el("span", { class: "cell-name cell-name-empty", text: t("editor.noName") }),
   );
-  if (cell.parameters.length) {
+  if (detailedView && cell.parameters.length) {
     parts.push(
       el(
         "ul",
@@ -479,12 +480,13 @@ function renderCellContent(cell, stored) {
   return parts;
 }
 
-const cellPosition = (row, column) => `${row.title}, ${columnLabel(column)}`;
+const cellPosition = (row, column) => `${row.title}, ${columnPosition(column)}`;
 
 function cellDescription(row, column, cell, stored) {
   const position = cellPosition(row, column);
   if (!stored) return t("editor.cellEmpty", { position });
-  const params = cell.parameters.map((p) => `${parameterLabel(p)} ${p.value}`).join(", ");
+  // Accessible name mirrors what is visible, so the simplified view stays simple.
+  const params = detailedView ? cell.parameters.map((p) => `${parameterLabel(p)} ${p.value}`).join(", ") : "";
   const name = cell.solution_name || t("editor.unnamed");
   return `${t("editor.cellSolution", { position, name })}${params ? ` (${params})` : ""}`;
 }
@@ -518,8 +520,12 @@ function renderCell(row, column) {
   const memberships = matrix.combinations.filter((c) => c.selections[row.id] === column.id);
   const selected = Boolean(active && active.selections[row.id] === column.id);
 
+  // Simplified view: no membership dots, except the active combination's
+  // check mark on the selected cell (selection must not rely on color alone).
+  const visibleMemberships = detailedView ? memberships : memberships.filter((c) => c.id === active?.id);
+
   const labelParts = [cellDescription(row, column, cell, stored)];
-  if (memberships.length) {
+  if (detailedView && memberships.length) {
     labelParts.push(t("editor.cellInCombinations", { names: memberships.map((c) => c.name).join(", ") }));
   }
   if (active) labelParts.push(t("editor.cellChooseIn", { name: active.name }));
@@ -532,7 +538,10 @@ function renderCell(row, column) {
 
   const td = el(
     "td",
-    { class: `cell${active ? " cell-selectable" : ""}${selected ? " cell-selected" : ""}` },
+    {
+      class: `cell${active ? " cell-selectable" : ""}${selected ? " cell-selected" : ""}`,
+      "data-column": column.id,
+    },
     el(
       "button",
       {
@@ -544,7 +553,7 @@ function renderCell(row, column) {
         "aria-pressed": active ? String(selected) : null,
         onClick: () => (active ? toggleCell(row, column) : editCell(row, column)),
       },
-      renderMemberships(memberships, active?.id),
+      renderMemberships(visibleMemberships, active?.id),
       ...content,
     ),
     // While selecting, the cell click toggles; editing needs its own button.
@@ -696,7 +705,7 @@ function renderTable() {
     el("tr", { class: "add-row" }, el("td", { colspan: solutionSpan + 1 }, addRowButton)),
   );
 
-  return el("table", { class: "matrix-table" }, thead, tbody);
+  return el("table", { class: detailedView ? "matrix-table" : "matrix-table view-simple" }, thead, tbody);
 }
 
 function render() {
@@ -719,6 +728,10 @@ function render() {
 applyStaticTranslations();
 initLanguageSelect(document.getElementById("language-select"));
 initThemeToggle(document.getElementById("theme-toggle"));
+initDetailedViewToggle(document.getElementById("detailed-view"), (detailed) => {
+  detailedView = detailed;
+  if (matrix) render();
+});
 document.getElementById("export-pdf").addEventListener("click", exportPdf);
 
 if (!matrixId) showFatal(null);

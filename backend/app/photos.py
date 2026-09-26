@@ -1,6 +1,6 @@
 """Photo file handling for cells.
 
-Photos are stored as MATRICES_DIR/{matrix_id}/uploads/{random}.{jpg|png} and
+Photos are stored as MATRICES_DIR/{matrix_id}/uploads/{random}.{jpg|png|webp} and
 referenced from the matrix JSON by the relative path "uploads/{filename}".
 The file type is detected from the content (magic bytes), never trusted from
 the client-provided name or content type.
@@ -19,11 +19,14 @@ logger = logging.getLogger(__name__)
 MAX_PHOTO_BYTES = 5 * 1024 * 1024
 UPLOADS_PREFIX = "uploads/"
 
-_FILENAME_RE = re.compile(r"^[0-9a-f]{32}\.(jpg|png)$")
+_FILENAME_RE = re.compile(r"^[0-9a-f]{32}\.(jpg|png|webp)$")
 _JPEG_MAGIC = b"\xff\xd8\xff"
 _PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+# WebP is a RIFF container: "RIFF" + 4-byte size + "WEBP".
+_RIFF_MAGIC = b"RIFF"
+_WEBP_FOURCC = b"WEBP"
 
-MEDIA_TYPES = {"jpg": "image/jpeg", "png": "image/png"}
+MEDIA_TYPES = {"jpg": "image/jpeg", "png": "image/png", "webp": "image/webp"}
 
 
 def detect_extension(data: bytes) -> str | None:
@@ -31,6 +34,8 @@ def detect_extension(data: bytes) -> str | None:
         return "jpg"
     if data.startswith(_PNG_MAGIC):
         return "png"
+    if data.startswith(_RIFF_MAGIC) and data[8:12] == _WEBP_FOURCC:
+        return "webp"
     return None
 
 

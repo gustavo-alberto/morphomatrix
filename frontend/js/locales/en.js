@@ -34,6 +34,9 @@ export default {
   "page.editor": "Editor · Morphomatrix",
   "page.print": "Print · Morphomatrix",
 
+  // View options
+  "view.detailed": "Detailed view",
+
   // Built-in parameters (see DEFAULT_PARAMETER_KEYS in matrix-utils.js)
   "parameter.complexity": "Complexity",
   "parameter.cost": "Cost",
@@ -102,13 +105,16 @@ export default {
   "editor.addColumn": "+ Solution",
   "editor.addColumnLabel": "Add solution column",
   "editor.noSolutions": "No solutions",
-  "editor.moveLeft": "Move {label} left",
-  "editor.moveRight": "Move {label} right",
-  "editor.deleteColumnLabel": "Delete column {label}",
+  // Columns have no visible name; {position} is read by screen readers only.
+  "editor.columnPosition": "column {n} of {total}",
+  "editor.deleteColumnLabel": "Delete {position}",
   "editor.deleteColumnTitle": "Delete column",
-  "editor.deleteColumnMessage":
-    "Column {label} and all its solutions (including photos) will be deleted. The following columns will be renumbered.",
-  "editor.columnDeleted": "Column {label} deleted.",
+  "editor.deleteColumnMessage": "The highlighted column and all its solutions (including photos) will be deleted.",
+  "editor.deleteColumnSolutions": "Solutions in this column: {names}.",
+  "editor.deleteColumnMore.one": "{names} and {count} more",
+  "editor.deleteColumnMore.other": "{names} and {count} more",
+  "editor.deleteColumnEmpty": "This column has no filled-in solutions.",
+  "editor.columnDeleted": "Column deleted.",
   "editor.columnGone": "This column had already been deleted.",
   "editor.removedFromCombinations": "{message} Selection removed from combinations: {names}.",
 
@@ -163,8 +169,8 @@ export default {
   "cell.removePhoto": "Remove photo",
   "cell.removePhotoMessage": "The photo of this solution will be removed when you save.",
   "cell.remove": "Remove",
-  "cell.photoHint": "JPG or PNG, up to 5MB.",
-  "cell.invalidType": "Invalid format. Use a JPG or PNG photo.",
+  "cell.photoHint": "JPG, PNG or WebP, up to 5MB.",
+  "cell.invalidType": "Invalid format. Use a JPG, PNG or WebP photo.",
   "cell.tooLarge": "The photo exceeds the 5MB limit.",
   "cell.solutionName": "Solution name",
   "cell.namePlaceholder": "E.g. Electric motor",

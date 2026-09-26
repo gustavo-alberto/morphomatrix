@@ -34,7 +34,13 @@
     <p id="editor-status" class="empty-state" role="status" data-i18n="common.loading">Carregando…</p>
     <div id="editor-content" hidden>
       <div id="combination-bar" class="combination-bar"></div>
-      <p id="editor-hint" class="hint editor-hint"></p>
+      <div class="view-bar">
+        <p id="editor-hint" class="hint editor-hint"></p>
+        <label class="switch">
+          <input type="checkbox" role="switch" id="detailed-view">
+          <span data-i18n="view.detailed">Visualização detalhada</span>
+        </label>
+      </div>
       <div id="table-wrap" class="table-wrap"></div>
     </div>
   </main>

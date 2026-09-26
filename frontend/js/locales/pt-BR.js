@@ -35,6 +35,9 @@ export default {
   "page.editor": "Editor · Morphomatrix",
   "page.print": "Impressão · Morphomatrix",
 
+  // View options
+  "view.detailed": "Visualização detalhada",
+
   // Built-in parameters (see DEFAULT_PARAMETER_KEYS in matrix-utils.js)
   "parameter.complexity": "Complexidade",
   "parameter.cost": "Custo",
@@ -103,13 +106,16 @@ export default {
   "editor.addColumn": "+ Solução",
   "editor.addColumnLabel": "Adicionar coluna de solução",
   "editor.noSolutions": "Nenhuma solução",
-  "editor.moveLeft": "Mover {label} para a esquerda",
-  "editor.moveRight": "Mover {label} para a direita",
-  "editor.deleteColumnLabel": "Excluir coluna {label}",
+  // Columns have no visible name; {position} is read by screen readers only.
+  "editor.columnPosition": "coluna {n} de {total}",
+  "editor.deleteColumnLabel": "Excluir {position}",
   "editor.deleteColumnTitle": "Excluir coluna",
-  "editor.deleteColumnMessage":
-    "A coluna {label} e todas as suas soluções (incluindo fotos) serão excluídas. As colunas seguintes serão renumeradas.",
-  "editor.columnDeleted": "Coluna {label} excluída.",
+  "editor.deleteColumnMessage": "A coluna destacada e todas as suas soluções (incluindo fotos) serão excluídas.",
+  "editor.deleteColumnSolutions": "Soluções nesta coluna: {names}.",
+  "editor.deleteColumnMore.one": "{names} e mais {count}",
+  "editor.deleteColumnMore.other": "{names} e mais {count}",
+  "editor.deleteColumnEmpty": "Esta coluna não tem soluções preenchidas.",
+  "editor.columnDeleted": "Coluna excluída.",
   "editor.columnGone": "Esta coluna já havia sido excluída.",
   "editor.removedFromCombinations": "{message} Seleção removida das combinações: {names}.",
 
@@ -164,8 +170,8 @@ export default {
   "cell.removePhoto": "Remover foto",
   "cell.removePhotoMessage": "A foto desta solução será removida ao salvar.",
   "cell.remove": "Remover",
-  "cell.photoHint": "JPG ou PNG, até 5MB.",
-  "cell.invalidType": "Formato inválido. Use uma foto JPG ou PNG.",
+  "cell.photoHint": "JPG, PNG ou WebP, até 5MB.",
+  "cell.invalidType": "Formato inválido. Use uma foto JPG, PNG ou WebP.",
   "cell.tooLarge": "A foto excede o limite de 5MB.",
   "cell.solutionName": "Nome da solução",
   "cell.namePlaceholder": "Ex.: Motor elétrico",

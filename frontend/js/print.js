@@ -8,7 +8,6 @@ import { ApiError, api } from "./api.js";
 import {
   NO_COMBINATION,
   PARAMETER_VALUES,
-  columnLabel,
   getCell,
   parameterLabel,
   photoUrl,
@@ -16,6 +15,7 @@ import {
 import { applyStaticTranslations, initLanguageSelect, t, tn } from "./i18n.js";
 import { initThemeToggle } from "./theme.js";
 import { el, errorMessage, formatDateTime } from "./ui.js";
+import { getDetailedView, initDetailedViewToggle } from "./view-prefs.js";
 
 const params = new URLSearchParams(window.location.search);
 const matrixId = params.get("id");
@@ -24,6 +24,9 @@ const combinationId = params.get("combination") || NO_COMBINATION;
 const toolbarEl = document.getElementById("print-toolbar");
 const statusEl = document.getElementById("print-status");
 const contentEl = document.getElementById("print-content");
+
+// Detailed view adds parameters and the scale legend to the printout.
+let detailedView = getDetailedView();
 
 // --- File name --------------------------------------------------------------
 
@@ -72,7 +75,7 @@ function renderCell(matrix, row, column, combination) {
     td.append(el("img", { class: "print-photo", src: photoUrl(matrix.id, cell.photo), alt: cell.solution_name || "" }));
   }
   if (cell.solution_name) td.append(el("div", { class: "print-solution", text: cell.solution_name }));
-  if (cell.parameters.length) {
+  if (detailedView && cell.parameters.length) {
     td.append(
       el(
         "ul",
@@ -104,15 +107,9 @@ function renderTable(matrix, combination) {
       el(
         "tr",
         {},
-        el("th", { scope: "col", rowspan: 2, class: "print-corner", text: t("table.functions") }),
+        el("th", { scope: "col", class: "print-corner", text: t("table.functions") }),
+        // Columns are unnamed: a single "Solutions" header spans them all.
         el("th", { scope: "colgroup", colspan: span, class: "print-solutions", text: t("table.solutions") }),
-      ),
-      el(
-        "tr",
-        {},
-        ...(columns.length
-          ? columns.map((c) => el("th", { scope: "col", text: columnLabel(c) }))
-          : [el("th", { text: "—" })]),
       ),
     ),
     el(
@@ -221,7 +218,18 @@ async function main() {
     window.print();
   };
 
-  contentEl.replaceChildren(renderHeader(matrix, combination), renderTable(matrix, combination), renderLegend());
+  const renderContent = () =>
+    contentEl.replaceChildren(
+      renderHeader(matrix, combination),
+      renderTable(matrix, combination),
+      // The scale legend only makes sense when parameters are shown.
+      detailedView ? renderLegend() : "",
+    );
+  renderContent();
+  initDetailedViewToggle(document.getElementById("detailed-view"), (detailed) => {
+    detailedView = detailed;
+    renderContent();
+  });
   document.getElementById("back-to-editor").href = `editor.html?id=${encodeURIComponent(matrix.id)}`;
   document.getElementById("print-btn").addEventListener("click", print);
   document.title = printTitle(matrix, combination);

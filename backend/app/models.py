@@ -94,7 +94,7 @@ class Row(BaseModel):
 
 
 class Column(BaseModel):
-    # Columns have no title: the UI label (S1, S2, ...) is derived from `order`.
+    # Columns have no title and no visible label; `order` sets the display order.
     id: str
     order: int
 
@@ -147,7 +147,7 @@ class RowUpdate(BaseModel):
 
 
 class ReorderRequest(BaseModel):
-    # Must contain every existing id exactly once, in the desired order.
+    # Row order: must contain every existing row id exactly once, in the desired order.
     ids: list[str]
 
 

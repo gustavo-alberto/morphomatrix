@@ -204,6 +204,6 @@ def _import_photo(
     data = _read_entry(zf, info, photos.MAX_PHOTO_BYTES)
     extension = photos.detect_extension(data)
     if extension is None:
-        logger.warning("Import: photo %r is not JPG/PNG, dropped", relative_path)
+        logger.warning("Import: photo %r is not JPG/PNG/WebP, dropped", relative_path)
         return None
     return photos.save_photo(matrix_id, data, extension)
