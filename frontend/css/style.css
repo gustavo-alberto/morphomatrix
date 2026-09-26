@@ -677,6 +677,131 @@ a {
   white-space: nowrap;
 }
 
+/* --- Combinations -------------------------------------------------------- */
+
+.combination-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.combo-bar-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.combo-tabs,
+.combo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.combo-actions {
+  margin-left: auto;
+}
+
+.combo-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+}
+
+.combo-tab:hover {
+  border-color: var(--color-border-strong);
+}
+
+.combo-tab[aria-pressed="true"] {
+  color: #fff;
+  background: var(--color-text);
+  border-color: var(--color-text);
+}
+
+.combo-tab-name {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.combo-count {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+.combo-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  background: var(--combo-color);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.15);
+}
+
+.combo-tab[aria-pressed="true"] .combo-dot {
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.cell-combos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cell {
+  position: relative;
+}
+
+.cell-selectable .cell-button:hover {
+  background: color-mix(in srgb, var(--combo-color) 8%, white);
+}
+
+.matrix-table .cell-selected {
+  background: color-mix(in srgb, var(--combo-color) 14%, white);
+}
+
+.cell-selected .cell-button {
+  box-shadow: inset 0 0 0 3px var(--combo-color);
+}
+
+.cell-selected .cell-button:hover {
+  background: color-mix(in srgb, var(--combo-color) 20%, white);
+}
+
+/* Keep the first line clear of the edit button. */
+.cell-selectable .cell-button > :first-child:not(.cell-empty) {
+  margin-right: 30px;
+}
+
+.cell > .icon-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgb(255 255 255 / 0.9);
+  border-color: var(--color-border);
+}
+
 /* --- Cell dialog --------------------------------------------------------- */
 
 .dialog-wide {

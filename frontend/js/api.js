@@ -63,7 +63,23 @@ export const api = {
   uploadPhoto: (id, rowId, columnId, file) =>
     request("POST", `${cellPath(id, rowId, columnId)}/photo`, { body: fileForm(file) }),
   deletePhoto: (id, rowId, columnId) => request("DELETE", `${cellPath(id, rowId, columnId)}/photo`),
+
+  // Combinations
+  createCombination: (id, name) => request("POST", `${matrixPath(id)}/combinations`, { json: { name } }),
+  renameCombination: (id, combinationId, name) =>
+    request("PUT", combinationPath(id, combinationId), { json: { name } }),
+  toggleSelection: (id, combinationId, rowId, columnId) =>
+    request("POST", `${combinationPath(id, combinationId)}/toggle`, {
+      json: { row_id: rowId, column_id: columnId },
+    }),
+  duplicateCombination: (id, combinationId, name) =>
+    request("POST", `${combinationPath(id, combinationId)}/duplicate`, { json: { name } }),
+  deleteCombination: (id, combinationId) => request("DELETE", combinationPath(id, combinationId)),
 };
+
+function combinationPath(id, combinationId) {
+  return `${matrixPath(id)}/combinations/${encodeURIComponent(combinationId)}`;
+}
 
 function cellPath(id, rowId, columnId) {
   return `${matrixPath(id)}/cells/${encodeURIComponent(rowId)}/${encodeURIComponent(columnId)}`;

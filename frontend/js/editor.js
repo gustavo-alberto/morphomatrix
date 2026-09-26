@@ -3,7 +3,7 @@
 import { ApiError, api } from "./api.js";
 import { openCellDialog } from "./cell-dialog.js";
 import { columnLabel, getCell, isCellEmpty, moveId, photoUrl } from "./matrix-utils.js";
-import { NAME_MAX_LENGTH, confirmDialog, el, errorMessage, toast } from "./ui.js";
+import { NAME_MAX_LENGTH, confirmDialog, el, errorMessage, promptDialog, toast } from "./ui.js";
 
 const matrixId = new URLSearchParams(window.location.search).get("id");
 
@@ -12,10 +12,27 @@ const toolbarEl = document.getElementById("editor-toolbar");
 const exportLink = document.getElementById("export-backup");
 const statusEl = document.getElementById("editor-status");
 const contentEl = document.getElementById("editor-content");
+const comboBarEl = document.getElementById("combination-bar");
+const hintEl = document.getElementById("editor-hint");
 const tableWrap = document.getElementById("table-wrap");
 
 let matrix = null;
 let busy = false;
+
+// Active combination is remembered per matrix across reloads.
+const ACTIVE_COMBINATION_KEY = `morphomatrix.activeCombination.${matrixId}`;
+let activeCombinationId = localStorage.getItem(ACTIVE_COMBINATION_KEY);
+
+/** The active combination, or null when in plain edit mode. */
+function activeCombination() {
+  return matrix?.combinations.find((c) => c.id === activeCombinationId) ?? null;
+}
+
+function setActiveCombination(id) {
+  activeCombinationId = id;
+  if (id) localStorage.setItem(ACTIVE_COMBINATION_KEY, id);
+  else localStorage.removeItem(ACTIVE_COMBINATION_KEY);
+}
 
 // --- State & actions --------------------------------------------------------
 
@@ -203,12 +220,94 @@ function removalMessage(base, affected) {
 
 // --- Cells ------------------------------------------------------------------
 
-async function editCell(row, column) {
+async function editCell(row, column, focusKey = `cell-${row.id}-${column.id}`) {
   if (busy) return;
   const next = await openCellDialog(matrix, row, column);
-  const focusKey = `cell-${row.id}-${column.id}`;
   if (next) setMatrix(next, focusKey);
   else focusFirst([focusKey]);
+}
+
+/** Mark/unmark a solution for its row in the active combination. */
+function toggleCell(row, column) {
+  const combination = activeCombination();
+  if (!combination) return;
+  run(async () => {
+    const next = await api.toggleSelection(matrixId, combination.id, row.id, column.id);
+    setMatrix(next, `cell-${row.id}-${column.id}`);
+  }, { 404: "Esta combinação ou solução não existe mais." });
+}
+
+// --- Combinations -----------------------------------------------------------
+
+const combinationErrors = { 404: "Esta combinação não existe mais." };
+
+async function createCombination() {
+  const name = await promptDialog({
+    title: "Nova combinação",
+    label: "Nome da combinação",
+    value: `Combinação ${matrix.combinations.length + 1}`,
+    confirmLabel: "Criar",
+  });
+  if (name === null) return;
+  run(async () => {
+    const next = await api.createCombination(matrixId, name);
+    setActiveCombination(next.combinations.at(-1).id);
+    setMatrix(next, `combo-${activeCombinationId}`);
+    toast(`Combinação "${name}" criada. Clique nas células para escolher as soluções.`, "success");
+  });
+}
+
+async function duplicateCombination(combination) {
+  const name = await promptDialog({
+    title: "Duplicar combinação",
+    label: "Nome da cópia",
+    value: `${combination.name} (cópia)`,
+    confirmLabel: "Duplicar",
+  });
+  if (name === null) return;
+  run(async () => {
+    const before = new Set(matrix.combinations.map((c) => c.id));
+    const next = await api.duplicateCombination(matrixId, combination.id, name);
+    const copy = next.combinations.find((c) => !before.has(c.id));
+    setActiveCombination(copy.id);
+    setMatrix(next, `combo-${copy.id}`);
+    toast(`Combinação "${name}" criada a partir de "${combination.name}".`, "success");
+  }, combinationErrors);
+}
+
+async function renameCombination(combination) {
+  const name = await promptDialog({
+    title: "Renomear combinação",
+    label: "Nome da combinação",
+    value: combination.name,
+  });
+  if (name === null || name === combination.name) return;
+  run(async () => {
+    setMatrix(await api.renameCombination(matrixId, combination.id, name), `combo-${combination.id}`);
+    toast("Combinação renomeada.", "success");
+  }, combinationErrors);
+}
+
+async function deleteCombination(combination) {
+  const confirmed = await confirmDialog({
+    title: "Excluir combinação",
+    message: `A combinação "${combination.name}" e suas escolhas serão excluídas. As soluções da matriz não são afetadas.`,
+    confirmLabel: "Excluir",
+    danger: true,
+  });
+  if (!confirmed) return;
+  run(async () => {
+    const next = await api.deleteCombination(matrixId, combination.id);
+    setActiveCombination(null);
+    setMatrix(next, "combo-none");
+    toast(`Combinação "${combination.name}" excluída.`, "success");
+  }, combinationErrors);
+}
+
+function selectCombination(id) {
+  setActiveCombination(id);
+  render();
+  focusFirst([`combo-${id ?? "none"}`]);
 }
 
 // --- Rendering --------------------------------------------------------------
@@ -341,31 +440,138 @@ function renderCellContent(cell, stored) {
   return parts;
 }
 
-function cellAriaLabel(row, column, cell, stored) {
+function cellDescription(row, column, cell, stored) {
   const base = `${row.title}, ${columnLabel(column)}`;
-  if (!stored) return `${base}: vazia. Adicionar solução`;
+  if (!stored) return `${base}: vazia`;
   const params = cell.parameters.map((p) => `${p.name} ${p.value}`).join(", ");
-  return `${base}: ${cell.solution_name || "sem nome"}${params ? ` (${params})` : ""}. Editar`;
+  return `${base}: ${cell.solution_name || "sem nome"}${params ? ` (${params})` : ""}`;
+}
+
+/** Colored dots for every combination this cell belongs to. */
+function renderMemberships(memberships) {
+  if (!memberships.length) return null;
+  return el(
+    "span",
+    { class: "cell-combos", "aria-hidden": "true" },
+    ...memberships.map((c) => {
+      const dot = el("span", { class: "combo-dot", title: c.name });
+      dot.style.setProperty("--combo-color", c.color);
+      return dot;
+    }),
+  );
 }
 
 function renderCell(row, column) {
   const stored = matrix.cells[`${row.id}_${column.id}`];
   const cell = getCell(matrix, row.id, column.id);
-  return el(
+  const active = activeCombination();
+  const memberships = matrix.combinations.filter((c) => c.selections[row.id] === column.id);
+  const selected = Boolean(active && active.selections[row.id] === column.id);
+
+  let label = cellDescription(row, column, cell, stored);
+  if (memberships.length) label += `. Combinações: ${memberships.map((c) => c.name).join(", ")}`;
+  label += active ? `. Escolher em "${active.name}"` : stored ? ". Editar" : ". Adicionar solução";
+
+  const content = !stored && active
+    ? [el("span", { class: "cell-empty", text: "Vazia" })]
+    : renderCellContent(cell, stored);
+
+  const td = el(
     "td",
-    { class: "cell" },
+    { class: `cell${active ? " cell-selectable" : ""}${selected ? " cell-selected" : ""}` },
     el(
       "button",
       {
         type: "button",
         class: "cell-button",
         "data-focus": `cell-${row.id}-${column.id}`,
-        "aria-label": cellAriaLabel(row, column, cell, stored),
-        onClick: () => editCell(row, column),
+        "aria-label": label,
+        // Toggle semantics only while a combination is active.
+        "aria-pressed": active ? String(selected) : null,
+        onClick: () => (active ? toggleCell(row, column) : editCell(row, column)),
       },
-      ...renderCellContent(cell, stored),
+      renderMemberships(memberships),
+      ...content,
     ),
+    // While selecting, the cell click toggles; editing needs its own button.
+    active
+      ? iconButton({
+          label: `Editar solução: ${row.title}, ${columnLabel(column)}`,
+          symbol: "✎",
+          focus: `cell-edit-${row.id}-${column.id}`,
+          onClick: () => editCell(row, column, `cell-edit-${row.id}-${column.id}`),
+        })
+      : null,
   );
+  if (active) td.style.setProperty("--combo-color", active.color);
+  return td;
+}
+
+// --- Combination bar --------------------------------------------------------
+
+function renderCombinationTab(combination, pressed) {
+  const id = combination?.id ?? null;
+  const children = [];
+  if (combination) {
+    const dot = el("span", { class: "combo-dot", "aria-hidden": "true" });
+    dot.style.setProperty("--combo-color", combination.color);
+    const chosen = Object.keys(combination.selections).length;
+    children.push(
+      dot,
+      el("span", { class: "combo-tab-name", text: combination.name }),
+      el("span", {
+        class: "combo-count",
+        title: "Funções com solução escolhida",
+        text: `${chosen}/${matrix.rows.length}`,
+      }),
+    );
+  } else {
+    children.push(el("span", { class: "combo-tab-name", text: "Nenhuma" }));
+  }
+  return el(
+    "button",
+    {
+      type: "button",
+      class: "combo-tab",
+      "aria-pressed": String(pressed),
+      "data-focus": `combo-${id ?? "none"}`,
+      onClick: () => selectCombination(id),
+    },
+    ...children,
+  );
+}
+
+function renderCombinationBar() {
+  const active = activeCombination();
+  const actions = [
+    el("button", { type: "button", class: "btn btn-sm", text: "+ Nova combinação", onClick: createCombination }),
+  ];
+  if (active) {
+    actions.push(
+      el("button", { type: "button", class: "btn btn-sm", text: "Duplicar", onClick: () => duplicateCombination(active) }),
+      el("button", { type: "button", class: "btn btn-sm", text: "Renomear", onClick: () => renameCombination(active) }),
+      el("button", {
+        type: "button",
+        class: "btn btn-sm btn-danger-outline",
+        text: "Excluir",
+        onClick: () => deleteCombination(active),
+      }),
+    );
+  }
+  comboBarEl.replaceChildren(
+    el("span", { id: "combo-bar-label", class: "combo-bar-label", text: "Combinação ativa" }),
+    el(
+      "div",
+      { class: "combo-tabs", role: "group", "aria-labelledby": "combo-bar-label" },
+      renderCombinationTab(null, !active),
+      ...matrix.combinations.map((c) => renderCombinationTab(c, c.id === active?.id)),
+    ),
+    el("div", { class: "combo-actions", role: "group", "aria-label": "Ações da combinação" }, ...actions),
+  );
+
+  hintEl.textContent = active
+    ? `Clique numa célula para marcá-la ou desmarcá-la em "${active.name}" (uma solução por função). Use ✎ para editar a solução.`
+    : "Clique numa célula para editar a solução. Selecione uma combinação para escolher soluções.";
 }
 
 function renderTable() {
@@ -434,6 +640,7 @@ function render() {
   document.title = `${matrix.name} · Morphomatrix`;
   exportLink.href = api.exportUrl(matrix.id);
 
+  renderCombinationBar();
   const scrollLeft = tableWrap.scrollLeft;
   tableWrap.replaceChildren(renderTable());
   tableWrap.scrollLeft = scrollLeft;
