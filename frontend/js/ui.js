@@ -2,6 +2,7 @@
 // User data is always inserted with textContent (never innerHTML).
 
 import { ApiError } from "./api.js";
+import { getLanguage, t } from "./i18n.js";
 
 export const NAME_MAX_LENGTH = 200;
 
@@ -33,13 +34,13 @@ const uniqueId = (prefix) => `${prefix}-${++idCounter}`;
  * Translate an error into a user-facing message.
  * `byStatus` maps HTTP status codes to context-specific messages.
  */
-export function errorMessage(error, byStatus = {}, fallback = "Ocorreu um erro inesperado.") {
+export function errorMessage(error, byStatus = {}, fallback = t("error.unexpected")) {
   if (error instanceof ApiError) {
     if (byStatus[error.status]) return byStatus[error.status];
-    if (error.status === 404) return "Item não encontrado. Recarregue a página.";
+    if (error.status === 404) return t("error.notFound");
     return fallback;
   }
-  if (error instanceof TypeError) return "Sem conexão com o servidor.";
+  if (error instanceof TypeError) return t("error.offline");
   return fallback;
 }
 
@@ -77,8 +78,8 @@ function openDialog(dialog, onClose) {
 export function confirmDialog({
   title,
   message,
-  confirmLabel = "Confirmar",
-  cancelLabel = "Cancelar",
+  confirmLabel = t("common.confirm"),
+  cancelLabel = t("common.cancel"),
   danger = false,
 }) {
   return new Promise((resolve) => {
@@ -116,8 +117,8 @@ export function promptDialog({
   title,
   label,
   value = "",
-  confirmLabel = "Salvar",
-  cancelLabel = "Cancelar",
+  confirmLabel = t("common.save"),
+  cancelLabel = t("common.cancel"),
   maxLength = NAME_MAX_LENGTH,
 }) {
   return new Promise((resolve) => {
@@ -153,7 +154,7 @@ export function promptDialog({
     form.addEventListener("submit", (event) => {
       if (event.submitter?.value === "confirm" && !input.value.trim()) {
         event.preventDefault();
-        input.setCustomValidity("Informe um nome.");
+        input.setCustomValidity(t("prompt.nameRequired"));
         input.reportValidity();
       }
     });
@@ -173,8 +174,8 @@ export function choiceDialog({
   message,
   options,
   value = options[0]?.value,
-  confirmLabel = "Confirmar",
-  cancelLabel = "Cancelar",
+  confirmLabel = t("common.confirm"),
+  cancelLabel = t("common.cancel"),
 }) {
   return new Promise((resolve) => {
     const titleId = uniqueId("dialog-title");
@@ -213,7 +214,7 @@ export function choiceDialog({
 
 // --- Formatting -------------------------------------------------------------
 
-const dateTimeFormat = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
+const dateTimeFormat = new Intl.DateTimeFormat(getLanguage(), { dateStyle: "short", timeStyle: "short" });
 
 export function formatDateTime(iso) {
   return dateTimeFormat.format(new Date(iso));

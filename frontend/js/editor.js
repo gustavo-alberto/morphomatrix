@@ -8,9 +8,11 @@ import {
   getCell,
   isCellEmpty,
   moveId,
+  parameterLabel,
   photoUrl,
   printUrl,
 } from "./matrix-utils.js";
+import { applyStaticTranslations, initLanguageSelect, t } from "./i18n.js";
 import { initThemeToggle } from "./theme.js";
 import {
   NAME_MAX_LENGTH,
@@ -74,7 +76,7 @@ function focusFirst(keys) {
  * Run a mutating action, one at a time. On failure, show a message and
  * reload the matrix so the UI reflects the server state.
  */
-async function run(action, errorsByStatus = {}, fallback = "Não foi possível concluir a ação.") {
+async function run(action, errorsByStatus = {}, fallback = t("editor.actionError")) {
   if (busy) return;
   busy = true;
   document.body.setAttribute("aria-busy", "true");
@@ -103,8 +105,8 @@ function showFatal(error) {
   contentEl.hidden = true;
   statusEl.hidden = false;
   statusEl.replaceChildren(
-    notFound ? "Matriz não encontrada. " : `${errorMessage(error, {}, "Não foi possível carregar a matriz.")} `,
-    el("a", { href: "./", text: "Voltar para a lista" }),
+    `${notFound ? t("common.matrixNotFound") : errorMessage(error, {}, t("common.matrixLoadError"))} `,
+    el("a", { href: "./", text: t("common.backToList") }),
   );
 }
 
@@ -112,7 +114,8 @@ function showFatal(error) {
 
 function addRow() {
   run(async () => {
-    const next = await api.addRow(matrixId);
+    const title = t("editor.defaultRowTitle", { n: matrix.rows.length + 1 });
+    const next = await api.addRow(matrixId, title);
     setMatrix(next);
     startRowRename(next.rows.at(-1));
   });
@@ -131,17 +134,17 @@ function moveRow(index, delta) {
 
 async function deleteRow(row) {
   const confirmed = await confirmDialog({
-    title: "Excluir função",
-    message: `A função "${row.title}" e todas as soluções desta linha (incluindo fotos) serão excluídas.`,
-    confirmLabel: "Excluir",
+    title: t("editor.deleteRowTitle"),
+    message: t("editor.deleteRowMessage", { title: row.title }),
+    confirmLabel: t("common.delete"),
     danger: true,
   });
   if (!confirmed) return;
   run(async () => {
     const { matrix: next, affected_combinations: affected } = await api.deleteRow(matrixId, row.id);
     setMatrix(next, "add-row");
-    toast(removalMessage(`Função "${row.title}" excluída.`, affected), "success");
-  }, { 404: "Esta função já havia sido excluída." });
+    toast(removalMessage(t("editor.rowDeleted", { title: row.title }), affected), "success");
+  }, { 404: t("editor.rowGone") });
 }
 
 function startRowRename(row) {
@@ -152,7 +155,7 @@ function startRowRename(row) {
     type: "text",
     maxlength: NAME_MAX_LENGTH,
     autocomplete: "off",
-    "aria-label": "Nome da função",
+    "aria-label": t("editor.rowNameLabel"),
   });
   input.value = row.title;
 
@@ -162,14 +165,14 @@ function startRowRename(row) {
     finished = true;
     const title = input.value.trim();
     if (!save || !title || title === row.title) {
-      if (save && !title) toast("O nome da função não pode ficar vazio.", "error");
+      if (save && !title) toast(t("editor.rowNameEmpty"), "error");
       input.replaceWith(button);
       button.focus();
       return;
     }
     run(async () => {
       setMatrix(await api.renameRow(matrixId, row.id, title), `row-title-${row.id}`);
-    }, { 404: "Esta função não existe mais." });
+    }, { 404: t("editor.rowMissing") });
   };
 
   input.addEventListener("keydown", (event) => {
@@ -216,23 +219,23 @@ function moveColumn(index, delta) {
 async function deleteColumn(column) {
   const label = columnLabel(column);
   const confirmed = await confirmDialog({
-    title: "Excluir coluna",
-    message: `A coluna ${label} e todas as suas soluções (incluindo fotos) serão excluídas. As colunas seguintes serão renumeradas.`,
-    confirmLabel: "Excluir",
+    title: t("editor.deleteColumnTitle"),
+    message: t("editor.deleteColumnMessage", { label }),
+    confirmLabel: t("common.delete"),
     danger: true,
   });
   if (!confirmed) return;
   run(async () => {
     const { matrix: next, affected_combinations: affected } = await api.deleteColumn(matrixId, column.id);
     setMatrix(next, "add-column");
-    toast(removalMessage(`Coluna ${label} excluída.`, affected), "success");
-  }, { 404: "Esta coluna já havia sido excluída." });
+    toast(removalMessage(t("editor.columnDeleted", { label }), affected), "success");
+  }, { 404: t("editor.columnGone") });
 }
 
-function removalMessage(base, affected) {
-  if (!affected.length) return base;
+function removalMessage(message, affected) {
+  if (!affected.length) return message;
   const names = affected.map((c) => `"${c.name}"`).join(", ");
-  return `${base} Seleção removida das combinações: ${names}.`;
+  return t("editor.removedFromCombinations", { message, names });
 }
 
 // --- Cells ------------------------------------------------------------------
@@ -251,35 +254,35 @@ function toggleCell(row, column) {
   run(async () => {
     const next = await api.toggleSelection(matrixId, combination.id, row.id, column.id);
     setMatrix(next, `cell-${row.id}-${column.id}`);
-  }, { 404: "Esta combinação ou solução não existe mais." });
+  }, { 404: t("editor.toggleGone") });
 }
 
 // --- Combinations -----------------------------------------------------------
 
-const combinationErrors = { 404: "Esta combinação não existe mais." };
+const combinationErrors = { 404: t("editor.combinationGone") };
 
 async function createCombination() {
   const name = await promptDialog({
-    title: "Nova combinação",
-    label: "Nome da combinação",
-    value: `Combinação ${matrix.combinations.length + 1}`,
-    confirmLabel: "Criar",
+    title: t("editor.newCombinationTitle"),
+    label: t("editor.combinationNameLabel"),
+    value: t("editor.defaultCombinationName", { n: matrix.combinations.length + 1 }),
+    confirmLabel: t("common.create"),
   });
   if (name === null) return;
   run(async () => {
     const next = await api.createCombination(matrixId, name);
     setActiveCombination(next.combinations.at(-1).id);
     setMatrix(next, `combo-${activeCombinationId}`);
-    toast(`Combinação "${name}" criada. Clique nas células para escolher as soluções.`, "success");
+    toast(t("editor.combinationCreated", { name }), "success");
   });
 }
 
 async function duplicateCombination(combination) {
   const name = await promptDialog({
-    title: "Duplicar combinação",
-    label: "Nome da cópia",
-    value: `${combination.name} (cópia)`,
-    confirmLabel: "Duplicar",
+    title: t("editor.duplicateTitle"),
+    label: t("editor.copyNameLabel"),
+    value: t("editor.copyName", { name: combination.name }),
+    confirmLabel: t("common.duplicate"),
   });
   if (name === null) return;
   run(async () => {
@@ -288,28 +291,28 @@ async function duplicateCombination(combination) {
     const copy = next.combinations.find((c) => !before.has(c.id));
     setActiveCombination(copy.id);
     setMatrix(next, `combo-${copy.id}`);
-    toast(`Combinação "${name}" criada a partir de "${combination.name}".`, "success");
+    toast(t("editor.duplicated", { name, source: combination.name }), "success");
   }, combinationErrors);
 }
 
 async function renameCombination(combination) {
   const name = await promptDialog({
-    title: "Renomear combinação",
-    label: "Nome da combinação",
+    title: t("editor.renameCombinationTitle"),
+    label: t("editor.combinationNameLabel"),
     value: combination.name,
   });
   if (name === null || name === combination.name) return;
   run(async () => {
     setMatrix(await api.renameCombination(matrixId, combination.id, name), `combo-${combination.id}`);
-    toast("Combinação renomeada.", "success");
+    toast(t("editor.combinationRenamed"), "success");
   }, combinationErrors);
 }
 
 async function deleteCombination(combination) {
   const confirmed = await confirmDialog({
-    title: "Excluir combinação",
-    message: `A combinação "${combination.name}" e suas escolhas serão excluídas. As soluções da matriz não são afetadas.`,
-    confirmLabel: "Excluir",
+    title: t("editor.deleteCombinationTitle"),
+    message: t("editor.deleteCombinationMessage", { name: combination.name }),
+    confirmLabel: t("common.delete"),
     danger: true,
   });
   if (!confirmed) return;
@@ -317,7 +320,7 @@ async function deleteCombination(combination) {
     const next = await api.deleteCombination(matrixId, combination.id);
     setActiveCombination(null);
     setMatrix(next, "combo-none");
-    toast(`Combinação "${combination.name}" excluída.`, "success");
+    toast(t("editor.combinationDeleted", { name: combination.name }), "success");
   }, combinationErrors);
 }
 
@@ -325,15 +328,14 @@ async function deleteCombination(combination) {
 
 async function exportPdf() {
   const choice = await choiceDialog({
-    title: "Exportar PDF",
-    message:
-      "Escolha a combinação a destacar. A matriz completa será exibida. Tamanho do papel (A3/A4), orientação e escala são definidos no diálogo de impressão.",
+    title: t("editor.exportPdf"),
+    message: t("editor.exportPdfMessage"),
     options: [
-      { value: NO_COMBINATION, label: "Nenhuma (matriz sem destaque)" },
+      { value: NO_COMBINATION, label: t("editor.exportNone") },
       ...matrix.combinations.map((c) => ({ value: c.id, label: c.name, color: c.color })),
     ],
     value: activeCombination()?.id ?? NO_COMBINATION,
-    confirmLabel: "Abrir impressão",
+    confirmLabel: t("editor.openPrint"),
   });
   if (choice === null) return;
   const url = printUrl(matrixId, choice === NO_COMBINATION ? null : choice);
@@ -376,21 +378,21 @@ function renderColumnHeader(column, index) {
         "div",
         { class: "header-controls" },
         iconButton({
-          label: `Mover ${label} para a esquerda`,
+          label: t("editor.moveLeft", { label }),
           symbol: "←",
           focus: `col-left-${column.id}`,
           disabled: index === 0,
           onClick: () => moveColumn(index, -1),
         }),
         iconButton({
-          label: `Mover ${label} para a direita`,
+          label: t("editor.moveRight", { label }),
           symbol: "→",
           focus: `col-right-${column.id}`,
           disabled: index === last,
           onClick: () => moveColumn(index, 1),
         }),
         iconButton({
-          label: `Excluir coluna ${label}`,
+          label: t("editor.deleteColumnLabel", { label }),
           symbol: "✕",
           focus: `col-delete-${column.id}`,
           onClick: () => deleteColumn(column),
@@ -412,8 +414,8 @@ function renderRowHeader(row, index) {
         type: "button",
         class: "row-title",
         "data-focus": `row-title-${row.id}`,
-        "aria-label": `Função: ${row.title}. Renomear`,
-        title: "Clique para renomear",
+        "aria-label": t("editor.rowTitleLabel", { title: row.title }),
+        title: t("editor.rowTitleHint"),
         text: row.title,
         onClick: () => startRowRename(row),
       }),
@@ -421,21 +423,21 @@ function renderRowHeader(row, index) {
         "div",
         { class: "header-controls" },
         iconButton({
-          label: `Mover "${row.title}" para cima`,
+          label: t("editor.moveUp", { title: row.title }),
           symbol: "↑",
           focus: `row-up-${row.id}`,
           disabled: index === 0,
           onClick: () => moveRow(index, -1),
         }),
         iconButton({
-          label: `Mover "${row.title}" para baixo`,
+          label: t("editor.moveDown", { title: row.title }),
           symbol: "↓",
           focus: `row-down-${row.id}`,
           disabled: index === last,
           onClick: () => moveRow(index, 1),
         }),
         iconButton({
-          label: `Excluir função "${row.title}"`,
+          label: t("editor.deleteRowLabel", { title: row.title }),
           symbol: "✕",
           focus: `row-delete-${row.id}`,
           onClick: () => deleteRow(row),
@@ -447,7 +449,7 @@ function renderRowHeader(row, index) {
 
 function renderCellContent(cell, stored) {
   if (!stored || (isCellEmpty(cell) && !stored.parameters.length)) {
-    return [el("span", { class: "cell-empty", text: "+ Adicionar solução" })];
+    return [el("span", { class: "cell-empty", text: t("editor.addSolution") })];
   }
   const parts = [];
   if (cell.photo) {
@@ -456,7 +458,7 @@ function renderCellContent(cell, stored) {
   parts.push(
     cell.solution_name
       ? el("span", { class: "cell-name", text: cell.solution_name })
-      : el("span", { class: "cell-name cell-name-empty", text: "Sem nome" }),
+      : el("span", { class: "cell-name cell-name-empty", text: t("editor.noName") }),
   );
   if (cell.parameters.length) {
     parts.push(
@@ -467,7 +469,7 @@ function renderCellContent(cell, stored) {
           el(
             "li",
             { class: "cell-param" },
-            el("span", { class: "cell-param-name", text: p.name }),
+            el("span", { class: "cell-param-name", text: parameterLabel(p) }),
             el("span", { class: `scale-badge scale-${p.value}`, text: String(p.value) }),
           ),
         ),
@@ -477,11 +479,14 @@ function renderCellContent(cell, stored) {
   return parts;
 }
 
+const cellPosition = (row, column) => `${row.title}, ${columnLabel(column)}`;
+
 function cellDescription(row, column, cell, stored) {
-  const base = `${row.title}, ${columnLabel(column)}`;
-  if (!stored) return `${base}: vazia`;
-  const params = cell.parameters.map((p) => `${p.name} ${p.value}`).join(", ");
-  return `${base}: ${cell.solution_name || "sem nome"}${params ? ` (${params})` : ""}`;
+  const position = cellPosition(row, column);
+  if (!stored) return t("editor.cellEmpty", { position });
+  const params = cell.parameters.map((p) => `${parameterLabel(p)} ${p.value}`).join(", ");
+  const name = cell.solution_name || t("editor.unnamed");
+  return `${t("editor.cellSolution", { position, name })}${params ? ` (${params})` : ""}`;
 }
 
 /**
@@ -513,12 +518,16 @@ function renderCell(row, column) {
   const memberships = matrix.combinations.filter((c) => c.selections[row.id] === column.id);
   const selected = Boolean(active && active.selections[row.id] === column.id);
 
-  let label = cellDescription(row, column, cell, stored);
-  if (memberships.length) label += `. Combinações: ${memberships.map((c) => c.name).join(", ")}`;
-  label += active ? `. Escolher em "${active.name}"` : stored ? ". Editar" : ". Adicionar solução";
+  const labelParts = [cellDescription(row, column, cell, stored)];
+  if (memberships.length) {
+    labelParts.push(t("editor.cellInCombinations", { names: memberships.map((c) => c.name).join(", ") }));
+  }
+  if (active) labelParts.push(t("editor.cellChooseIn", { name: active.name }));
+  else labelParts.push(stored ? t("editor.cellEdit") : t("editor.cellAdd"));
+  const label = labelParts.join(". ");
 
   const content = !stored && active
-    ? [el("span", { class: "cell-empty", text: "Vazia" })]
+    ? [el("span", { class: "cell-empty", text: t("editor.cellEmptyShort") })]
     : renderCellContent(cell, stored);
 
   const td = el(
@@ -541,7 +550,7 @@ function renderCell(row, column) {
     // While selecting, the cell click toggles; editing needs its own button.
     active
       ? iconButton({
-          label: `Editar solução: ${row.title}, ${columnLabel(column)}`,
+          label: t("editor.editSolutionLabel", { position: cellPosition(row, column) }),
           symbol: "✎",
           focus: `cell-edit-${row.id}-${column.id}`,
           onClick: () => editCell(row, column, `cell-edit-${row.id}-${column.id}`),
@@ -566,12 +575,12 @@ function renderCombinationTab(combination, pressed) {
       el("span", { class: "combo-tab-name", text: combination.name }),
       el("span", {
         class: "combo-count",
-        title: "Funções com solução escolhida",
+        title: t("editor.chosenCountTitle"),
         text: `${chosen}/${matrix.rows.length}`,
       }),
     );
   } else {
-    children.push(el("span", { class: "combo-tab-name", text: "Nenhuma" }));
+    children.push(el("span", { class: "combo-tab-name", text: t("editor.noCombination") }));
   }
   return el(
     "button",
@@ -589,34 +598,44 @@ function renderCombinationTab(combination, pressed) {
 function renderCombinationBar() {
   const active = activeCombination();
   const actions = [
-    el("button", { type: "button", class: "btn btn-sm", text: "+ Nova combinação", onClick: createCombination }),
+    el("button", { type: "button", class: "btn btn-sm", text: t("editor.newCombination"), onClick: createCombination }),
   ];
   if (active) {
     actions.push(
-      el("button", { type: "button", class: "btn btn-sm", text: "Duplicar", onClick: () => duplicateCombination(active) }),
-      el("button", { type: "button", class: "btn btn-sm", text: "Renomear", onClick: () => renameCombination(active) }),
+      el("button", {
+        type: "button",
+        class: "btn btn-sm",
+        text: t("common.duplicate"),
+        onClick: () => duplicateCombination(active),
+      }),
+      el("button", {
+        type: "button",
+        class: "btn btn-sm",
+        text: t("common.rename"),
+        onClick: () => renameCombination(active),
+      }),
       el("button", {
         type: "button",
         class: "btn btn-sm btn-danger-outline",
-        text: "Excluir",
+        text: t("common.delete"),
         onClick: () => deleteCombination(active),
       }),
     );
   }
   comboBarEl.replaceChildren(
-    el("span", { id: "combo-bar-label", class: "combo-bar-label", text: "Combinação ativa" }),
+    el("span", { id: "combo-bar-label", class: "combo-bar-label", text: t("editor.activeCombination") }),
     el(
       "div",
       { class: "combo-tabs", role: "group", "aria-labelledby": "combo-bar-label" },
       renderCombinationTab(null, !active),
       ...matrix.combinations.map((c) => renderCombinationTab(c, c.id === active?.id)),
     ),
-    el("div", { class: "combo-actions", role: "group", "aria-label": "Ações da combinação" }, ...actions),
+    el("div", { class: "combo-actions", role: "group", "aria-label": t("editor.combinationActions") }, ...actions),
   );
 
   hintEl.textContent = active
-    ? `Clique numa célula para marcá-la ou desmarcá-la em "${active.name}" (uma solução por função). Use ✎ para editar a solução.`
-    : "Clique numa célula para editar a solução. Selecione uma combinação para escolher soluções.";
+    ? t("editor.hintSelecting", { name: active.name })
+    : t("editor.hintEditing");
 }
 
 function renderTable() {
@@ -627,16 +646,16 @@ function renderTable() {
     type: "button",
     class: "btn btn-sm add-btn",
     "data-focus": "add-column",
-    "aria-label": "Adicionar coluna de solução",
-    text: "+ Solução",
+    "aria-label": t("editor.addColumnLabel"),
+    text: t("editor.addColumn"),
     onClick: addColumn,
   });
   const addRowButton = el("button", {
     type: "button",
     class: "btn btn-sm add-btn",
     "data-focus": "add-row",
-    "aria-label": "Adicionar função",
-    text: "+ Função",
+    "aria-label": t("editor.addRowLabel"),
+    text: t("editor.addRow"),
     onClick: addRow,
   });
 
@@ -646,8 +665,8 @@ function renderTable() {
     el(
       "tr",
       {},
-      el("th", { scope: "col", rowspan: 2, class: "corner-header", text: "Funções" }),
-      el("th", { scope: "colgroup", colspan: solutionSpan, class: "solutions-header", text: "Soluções" }),
+      el("th", { scope: "col", rowspan: 2, class: "corner-header", text: t("table.functions") }),
+      el("th", { scope: "colgroup", colspan: solutionSpan, class: "solutions-header", text: t("table.solutions") }),
       el("th", { rowspan: 2, class: "add-column-cell" }, addColumnButton),
     ),
     el(
@@ -655,7 +674,7 @@ function renderTable() {
       {},
       ...(columns.length
         ? columns.map(renderColumnHeader)
-        : [el("th", { class: "col-header col-placeholder", text: "Nenhuma solução" })]),
+        : [el("th", { class: "col-header col-placeholder", text: t("editor.noSolutions") })]),
     ),
   );
 
@@ -697,6 +716,8 @@ function render() {
 
 // --- Bootstrap --------------------------------------------------------------
 
+applyStaticTranslations();
+initLanguageSelect(document.getElementById("language-select"));
 initThemeToggle(document.getElementById("theme-toggle"));
 document.getElementById("export-pdf").addEventListener("click", exportPdf);
 

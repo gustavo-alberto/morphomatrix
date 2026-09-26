@@ -2,7 +2,7 @@
 
 Zip layout:
 
-    manifest.json       {"format": "morphomatrix-backup", "version": 1}
+    manifest.json       {"format": "morphomatrix-backup", "version": 2}
     matrix.json         the matrix document
     uploads/{file}      photos referenced by cells
 
@@ -32,7 +32,8 @@ from .models import Matrix, new_matrix_id, utc_now
 logger = logging.getLogger(__name__)
 
 BACKUP_FORMAT = "morphomatrix-backup"
-BACKUP_VERSION = 1
+# 2: built-in parameters are identified by `key` instead of a Portuguese name.
+BACKUP_VERSION = 2
 MANIFEST_NAME = "manifest.json"
 MATRIX_NAME = "matrix.json"
 
@@ -47,7 +48,7 @@ MAX_ENTRIES = 20_000
 def export_filename(matrix: Matrix) -> str:
     """ASCII-safe download name, e.g. "Matriz-Projeto-X_20260926-1530.zip"."""
     ascii_name = unicodedata.normalize("NFKD", matrix.name).encode("ascii", "ignore").decode()
-    slug = re.sub(r"[^A-Za-z0-9]+", "-", ascii_name).strip("-") or "matriz"
+    slug = re.sub(r"[^A-Za-z0-9]+", "-", ascii_name).strip("-") or "matrix"
     return f"{slug}_{utc_now():%Y%m%d-%H%M}.zip"
 
 
@@ -109,7 +110,7 @@ def _check_upload_size(fileobj: BinaryIO) -> None:
 def _check_manifest(zf: zipfile.ZipFile, entries: dict[str, zipfile.ZipInfo]) -> None:
     info = entries.get(MANIFEST_NAME)
     if info is None:
-        return  # tolerated: matrix.json alone is enough
+        raise InvalidBackupError("manifest.json not found in backup")
     try:
         manifest = json.loads(_read_entry(zf, info, 64 * 1024))
     except (ValueError, UnicodeDecodeError):
@@ -117,7 +118,8 @@ def _check_manifest(zf: zipfile.ZipFile, entries: dict[str, zipfile.ZipInfo]) ->
     if not isinstance(manifest, dict) or manifest.get("format") != BACKUP_FORMAT:
         raise InvalidBackupError("Not a Morphomatrix backup")
     version = manifest.get("version")
-    if not isinstance(version, int) or version > BACKUP_VERSION:
+    # Only the current format is supported (no migration of older backups).
+    if version != BACKUP_VERSION:
         raise InvalidBackupError(f"Unsupported backup version: {version}")
 
 

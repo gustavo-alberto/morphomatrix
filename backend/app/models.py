@@ -6,17 +6,26 @@ applied to user-provided data.
 """
 
 from datetime import UTC, datetime
-from typing import Annotated
+from enum import StrEnum
+from typing import Annotated, Self
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
 
 PARAMETER_MIN = 1  # best (green)
 PARAMETER_MAX = 5  # worst (red)
 DEFAULT_PARAMETER_VALUE = 3
 
-# User-facing labels, therefore kept in Portuguese.
-DEFAULT_PARAMETER_NAMES = ("Complexidade", "Custo")
+
+class ParameterKey(StrEnum):
+    """Built-in parameters. The UI translates their labels; no text is stored."""
+
+    COMPLEXITY = "complexity"
+    COST = "cost"
+
+
+# Built-in parameters every new cell starts with, in display order.
+DEFAULT_PARAMETER_KEYS = (ParameterKey.COMPLEXITY, ParameterKey.COST)
 
 NAME_MAX_LENGTH = 200
 
@@ -54,12 +63,21 @@ def cell_key(row_id: str, column_id: str) -> str:
 
 
 class Parameter(BaseModel):
-    name: Name
+    """A 1-5 rating: either built-in (`key`) or custom (free-text `name`)."""
+
+    key: ParameterKey | None = None
+    name: Name | None = None
     value: ParameterValue = DEFAULT_PARAMETER_VALUE
+
+    @model_validator(mode="after")
+    def check_key_or_name(self) -> Self:
+        if (self.key is None) == (self.name is None):
+            raise ValueError("A parameter needs either a key (built-in) or a name (custom), not both")
+        return self
 
 
 def default_parameters() -> list[Parameter]:
-    return [Parameter(name=name) for name in DEFAULT_PARAMETER_NAMES]
+    return [Parameter(key=key) for key in DEFAULT_PARAMETER_KEYS]
 
 
 class Cell(BaseModel):
@@ -120,7 +138,7 @@ class MatrixUpdate(BaseModel):
 
 
 class RowCreate(BaseModel):
-    # When omitted, a default title ("Função N") is generated.
+    # The UI sends a translated title; when omitted, a neutral fallback is used.
     title: Name | None = None
 
 
@@ -139,9 +157,19 @@ class CellUpdate(BaseModel):
     ] = ""
     parameters: list[Parameter]
 
+    @field_validator("parameters")
+    @classmethod
+    def check_unique(cls, parameters: list[Parameter]) -> list[Parameter]:
+        keys = [p.key for p in parameters if p.key is not None]
+        names = [p.name.casefold() for p in parameters if p.name is not None]
+        if len(keys) != len(set(keys)) or len(names) != len(set(names)):
+            raise ValueError("Duplicate parameters")
+        return parameters
+
 
 class CombinationCreate(BaseModel):
-    # When omitted, a default name ("Combinação N") and a palette color are used.
+    # The UI sends a translated name; when omitted, a neutral fallback and a
+    # palette color are used.
     name: Name | None = None
     color: Color | None = None
 
@@ -155,7 +183,7 @@ class CombinationUpdate(BaseModel):
 
 
 class CombinationDuplicate(BaseModel):
-    # When omitted, the copy is named "{original} (cópia)".
+    # The UI sends a translated name; when omitted, "{original} (copy)" is used.
     name: Name | None = None
 
 

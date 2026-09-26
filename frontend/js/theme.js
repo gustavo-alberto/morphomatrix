@@ -4,12 +4,13 @@
 // "dark" force a scheme via <html data-theme>. The initial value is applied
 // by an inline script in each page <head> to avoid a flash of the wrong theme.
 
+import { t } from "./i18n.js";
+
 const STORAGE_KEY = "morphomatrix.theme";
 const MODES = ["system", "light", "dark"];
-
-// User-facing labels, therefore in Portuguese.
-const LABELS = { system: "Sistema", light: "Claro", dark: "Escuro" };
 const ICONS = { system: "◐", light: "☀", dark: "☾" };
+
+const modeLabel = (mode) => t(`theme.${mode}`);
 
 function readMode() {
   try {
@@ -34,7 +35,7 @@ function saveMode(mode) {
   }
 }
 
-/** Turn `button` into a toggle cycling Sistema -> Claro -> Escuro. */
+/** Turn `button` into a toggle cycling System -> Light -> Dark. */
 export function initThemeToggle(button) {
   if (!button) return;
   let mode = readMode();
@@ -43,10 +44,10 @@ export function initThemeToggle(button) {
     const next = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
     button.replaceChildren(
       Object.assign(document.createElement("span"), { className: "theme-icon", textContent: ICONS[mode] }),
-      `Tema: ${LABELS[mode]}`,
+      t("theme.label", { mode: modeLabel(mode) }),
     );
     button.firstChild.setAttribute("aria-hidden", "true");
-    button.title = `Mudar para tema ${LABELS[next].toLowerCase()}`;
+    button.title = t("theme.switchTo", { mode: modeLabel(next).toLowerCase() });
   };
 
   button.addEventListener("click", () => {

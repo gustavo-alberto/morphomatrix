@@ -5,7 +5,15 @@
 // browsers as the default PDF file name, so it is set right before printing.
 
 import { ApiError, api } from "./api.js";
-import { NO_COMBINATION, PARAMETER_VALUES, columnLabel, getCell, photoUrl } from "./matrix-utils.js";
+import {
+  NO_COMBINATION,
+  PARAMETER_VALUES,
+  columnLabel,
+  getCell,
+  parameterLabel,
+  photoUrl,
+} from "./matrix-utils.js";
+import { applyStaticTranslations, initLanguageSelect, t, tn } from "./i18n.js";
 import { initThemeToggle } from "./theme.js";
 import { el, errorMessage, formatDateTime } from "./ui.js";
 
@@ -21,7 +29,11 @@ const contentEl = document.getElementById("print-content");
 
 /** Keep only ASCII letters and digits: "Matriz - Projeto Ação" -> "MatrizProjetoAcao". */
 export function fileSafe(text) {
-  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]/g, "");
+  return text
+    .replace(/ß/g, "ss") // does not decompose under NFD
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9]/g, "");
 }
 
 function timestamp(date = new Date()) {
@@ -34,8 +46,10 @@ function timestamp(date = new Date()) {
 
 /** "{matrix}_{combination}_{YYYYMMDD-HHmm}", e.g. "MatrizProjetoX_ConceitoA_20260926-1530". */
 export function printTitle(matrix, combination) {
-  const matrixPart = fileSafe(matrix.name) || "Matriz";
-  const combinationPart = combination ? fileSafe(combination.name) || "Combinacao" : "SemCombinacao";
+  const matrixPart = fileSafe(matrix.name) || t("print.file.matrix");
+  const combinationPart = combination
+    ? fileSafe(combination.name) || t("print.file.combination")
+    : t("print.file.none");
   return `${matrixPart}_${combinationPart}_${timestamp()}`;
 }
 
@@ -67,7 +81,7 @@ function renderCell(matrix, row, column, combination) {
           el(
             "li",
             {},
-            el("span", { class: "print-param-name", text: p.name }),
+            el("span", { class: "print-param-name", text: parameterLabel(p) }),
             el("span", { class: `scale-badge scale-${p.value}`, text: String(p.value) }),
           ),
         ),
@@ -90,8 +104,8 @@ function renderTable(matrix, combination) {
       el(
         "tr",
         {},
-        el("th", { scope: "col", rowspan: 2, class: "print-corner", text: "Funções" }),
-        el("th", { scope: "colgroup", colspan: span, class: "print-solutions", text: "Soluções" }),
+        el("th", { scope: "col", rowspan: 2, class: "print-corner", text: t("table.functions") }),
+        el("th", { scope: "colgroup", colspan: span, class: "print-solutions", text: t("table.solutions") }),
       ),
       el(
         "tr",
@@ -126,10 +140,10 @@ function renderHeader(matrix, combination) {
       "span",
       { class: "print-highlight" },
       dot,
-      `Combinação destacada: ${combination.name} (${chosen}/${matrix.rows.length} funções)`,
+      tn("print.highlighted", matrix.rows.length, { name: combination.name, chosen }),
     );
   } else {
-    highlight = el("span", { class: "print-highlight", text: "Sem combinação destacada" });
+    highlight = el("span", { class: "print-highlight", text: t("print.noHighlight") });
   }
   return el(
     "header",
@@ -139,7 +153,7 @@ function renderHeader(matrix, combination) {
       "div",
       { class: "print-meta" },
       highlight,
-      el("span", { text: `Gerado em ${formatDateTime(new Date().toISOString())}` }),
+      el("span", { text: t("print.generatedAt", { date: formatDateTime(new Date().toISOString()) }) }),
     ),
   );
 }
@@ -148,9 +162,9 @@ function renderLegend() {
   return el(
     "footer",
     { class: "print-legend" },
-    el("span", { text: "Escala dos parâmetros:" }),
+    el("span", { text: t("print.scaleLabel") }),
     ...PARAMETER_VALUES.map((v) => el("span", { class: `scale-badge scale-${v}`, text: String(v) })),
-    el("span", { text: "1 = melhor · 5 = pior" }),
+    el("span", { text: t("scale.hint") }),
   );
 }
 
@@ -174,12 +188,12 @@ function showError(message) {
   toolbarEl.hidden = true;
   contentEl.hidden = true;
   statusEl.hidden = false;
-  statusEl.replaceChildren(`${message} `, el("a", { href: "./", text: "Voltar para a lista" }));
+  statusEl.replaceChildren(`${message} `, el("a", { href: "./", text: t("common.backToList") }));
 }
 
 async function main() {
   if (!matrixId) {
-    showError("Matriz não encontrada.");
+    showError(t("common.matrixNotFound"));
     return;
   }
 
@@ -188,7 +202,7 @@ async function main() {
     matrix = await api.getMatrix(matrixId);
   } catch (error) {
     const notFound = error instanceof ApiError && error.status === 404;
-    showError(notFound ? "Matriz não encontrada." : errorMessage(error, {}, "Não foi possível carregar a matriz."));
+    showError(notFound ? t("common.matrixNotFound") : errorMessage(error, {}, t("common.matrixLoadError")));
     return;
   }
 
@@ -196,7 +210,7 @@ async function main() {
   if (combinationId !== NO_COMBINATION) {
     combination = matrix.combinations.find((c) => c.id === combinationId) ?? null;
     if (!combination) {
-      showError("Combinação não encontrada.");
+      showError(t("print.combinationNotFound"));
       return;
     }
   }
@@ -219,5 +233,7 @@ async function main() {
   print();
 }
 
+applyStaticTranslations();
+initLanguageSelect(document.getElementById("language-select"));
 initThemeToggle(document.getElementById("theme-toggle"));
 main();

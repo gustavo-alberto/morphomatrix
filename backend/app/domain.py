@@ -20,10 +20,11 @@ from .models import (
     new_item_id,
 )
 
-# User-facing labels, therefore kept in Portuguese.
-DEFAULT_ROW_TITLE = "Função {n}"
-DEFAULT_COMBINATION_NAME = "Combinação {n}"
-DUPLICATE_COMBINATION_NAME = "{name} (cópia)"
+# Fallbacks for API clients that send no name. The UI always sends a name in
+# the user's language, so these are neutral (English) and rarely stored.
+DEFAULT_ROW_TITLE = "Function {n}"
+DEFAULT_COMBINATION_NAME = "Combination {n}"
+DUPLICATE_COMBINATION_NAME = "{name} (copy)"
 
 # Combination colors, assigned in order (first unused wins). Pure green/red
 # are avoided so they do not clash with the 1-5 parameter scale colors.

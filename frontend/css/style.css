@@ -132,6 +132,34 @@ a {
   display: none;
 }
 
+/* Language and theme controls. */
+.preferences {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.select {
+  min-height: 34px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--color-text);
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+}
+
+.select:hover {
+  background: var(--color-hover);
+}
+
+/* Static text stays hidden until js/i18n.js has translated it. */
+.i18n-pending [data-i18n] {
+  visibility: hidden;
+}
+
 .page {
   max-width: 880px;
   margin: 0 auto;
@@ -162,8 +190,10 @@ a {
 }
 
 .back-link {
-  text-decoration: none;
+  flex-shrink: 0;
   font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
 }
 
 .back-link:hover {

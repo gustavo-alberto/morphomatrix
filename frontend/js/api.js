@@ -46,7 +46,7 @@ export const api = {
   exportUrl: (id) => `${matrixPath(id)}/export`,
 
   // Rows
-  addRow: (id) => request("POST", `${matrixPath(id)}/rows`),
+  addRow: (id, title) => request("POST", `${matrixPath(id)}/rows`, { json: { title } }),
   renameRow: (id, rowId, title) =>
     request("PUT", `${matrixPath(id)}/rows/${encodeURIComponent(rowId)}`, { json: { title } }),
   reorderRows: (id, ids) => request("PUT", `${matrixPath(id)}/rows/reorder`, { json: { ids } }),

@@ -1,24 +1,27 @@
 // Cell edit dialog: photo, solution name and 1-5 parameters.
 //
 // Changes (including photo upload/removal) are only sent when the user
-// clicks "Salvar"; "Cancelar" / Esc discards everything.
+// clicks Save; Cancel / Esc discards everything.
 
 import { api } from "./api.js";
+import { getLanguage, t } from "./i18n.js";
 import { NAME_MAX_LENGTH, confirmDialog, el, errorMessage, toast } from "./ui.js";
 import {
   DEFAULT_PARAMETER_VALUE,
   PARAMETER_VALUES,
   columnLabel,
   getCell,
-  isDefaultParameter,
+  isBuiltInParameter,
+  parameterLabel,
   photoUrl,
 } from "./matrix-utils.js";
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 const PHOTO_TYPES = ["image/jpeg", "image/png"];
 
-let uid = 0;
-const nextKey = () => `p${++uid}`;
+// Local id for each parameter row in the dialog (not the parameter `key`).
+let uidCounter = 0;
+const nextUid = () => `p${++uidCounter}`;
 
 /**
  * Open the dialog. Resolves to the updated matrix if something was saved,
@@ -35,7 +38,7 @@ export function openCellDialog(matrix, row, column) {
     const preview = el("div", { class: "photo-preview" });
     const fileInput = el("input", { type: "file", accept: PHOTO_TYPES.join(","), hidden: true });
     const uploadButton = el("button", { type: "button", class: "btn" });
-    const removeButton = el("button", { type: "button", class: "btn btn-danger-outline", text: "Remover foto" });
+    const removeButton = el("button", { type: "button", class: "btn btn-danger-outline", text: t("cell.removePhoto") });
 
     function currentPhotoSrc() {
       if (photo.previewUrl) return photo.previewUrl;
@@ -47,10 +50,10 @@ export function openCellDialog(matrix, row, column) {
       const src = currentPhotoSrc();
       preview.replaceChildren(
         src
-          ? el("img", { src, alt: "Foto da solução" })
-          : el("span", { class: "photo-empty", text: "Sem foto" }),
+          ? el("img", { src, alt: t("cell.photoAlt") })
+          : el("span", { class: "photo-empty", text: t("cell.noPhoto") }),
       );
-      uploadButton.textContent = src ? "Trocar foto" : "Enviar foto";
+      uploadButton.textContent = src ? t("cell.replacePhoto") : t("cell.uploadPhoto");
       removeButton.hidden = !src;
     }
 
@@ -66,11 +69,11 @@ export function openCellDialog(matrix, row, column) {
       fileInput.value = "";
       if (!file) return;
       if (!PHOTO_TYPES.includes(file.type)) {
-        toast("Formato inválido. Use uma foto JPG ou PNG.", "error");
+        toast(t("cell.invalidType"), "error");
         return;
       }
       if (file.size > MAX_PHOTO_BYTES) {
-        toast("A foto excede o limite de 5MB.", "error");
+        toast(t("cell.tooLarge"), "error");
         return;
       }
       clearPending();
@@ -82,9 +85,9 @@ export function openCellDialog(matrix, row, column) {
 
     removeButton.addEventListener("click", async () => {
       const confirmed = await confirmDialog({
-        title: "Remover foto",
-        message: "A foto desta solução será removida ao salvar.",
-        confirmLabel: "Remover",
+        title: t("cell.removePhoto"),
+        message: t("cell.removePhotoMessage"),
+        confirmLabel: t("cell.remove"),
         danger: true,
       });
       if (!confirmed) return;
@@ -102,22 +105,24 @@ export function openCellDialog(matrix, row, column) {
       type: "text",
       maxlength: NAME_MAX_LENGTH,
       autocomplete: "off",
-      placeholder: "Ex.: Motor elétrico",
+      placeholder: t("cell.namePlaceholder"),
     });
     nameInput.value = original.solution_name;
 
     // --- Parameters ---------------------------------------------------------
 
-    const params = original.parameters.map((p) => ({ ...p, key: nextKey() }));
+    // Custom parameters keep an editable `name`; built-in ones keep their `key`.
+    const params = original.parameters.map((p) => ({ key: p.key ?? null, name: p.name ?? "", value: p.value, uid: nextUid() }));
     const paramList = el("div", { class: "param-list" });
 
     function renderParam(param) {
-      const fixed = isDefaultParameter(param.name) && !param.isNew;
+      const fixed = isBuiltInParameter(param);
+      const displayName = fixed ? parameterLabel(param) : param.name || t("cell.newParam");
       const options = PARAMETER_VALUES.map((value) => {
         const radio = el("input", {
           type: "radio",
           class: "visually-hidden",
-          name: `param-${param.key}`,
+          name: `param-${param.uid}`,
           value,
           checked: param.value === value,
         });
@@ -129,16 +134,16 @@ export function openCellDialog(matrix, row, column) {
 
       let nameNode;
       if (fixed) {
-        nameNode = el("span", { class: "param-name", text: param.name });
+        nameNode = el("span", { class: "param-name", text: displayName });
       } else {
         nameNode = el("input", {
           class: "input input-sm param-name-input",
           type: "text",
           maxlength: NAME_MAX_LENGTH,
           autocomplete: "off",
-          placeholder: "Nome do parâmetro",
-          "aria-label": "Nome do parâmetro",
-          "data-param-key": param.key,
+          placeholder: t("cell.paramNameLabel"),
+          "aria-label": t("cell.paramNameLabel"),
+          "data-param-uid": param.uid,
         });
         nameNode.value = param.name;
         nameNode.addEventListener("input", () => {
@@ -151,8 +156,8 @@ export function openCellDialog(matrix, row, column) {
         : el("button", {
             type: "button",
             class: "icon-btn",
-            "aria-label": `Remover parâmetro ${param.name || "novo"}`,
-            title: "Remover parâmetro",
+            "aria-label": t("cell.removeParamLabel", { name: displayName }),
+            title: t("cell.removeParam"),
             text: "✕",
             onClick: () => {
               params.splice(params.indexOf(param), 1);
@@ -164,7 +169,7 @@ export function openCellDialog(matrix, row, column) {
       return el(
         "fieldset",
         { class: "param-row" },
-        el("legend", { class: "visually-hidden", text: `Parâmetro ${param.name || "novo"} (1 = melhor, 5 = pior)` }),
+        el("legend", { class: "visually-hidden", text: t("cell.paramLegend", { name: displayName }) }),
         nameNode,
         el("div", { class: "scale-picker" }, ...options),
         removeParam,
@@ -178,12 +183,12 @@ export function openCellDialog(matrix, row, column) {
     const addParamButton = el("button", {
       type: "button",
       class: "btn btn-sm",
-      text: "+ Adicionar parâmetro",
+      text: t("cell.addParam"),
       onClick: () => {
-        const param = { name: "", value: DEFAULT_PARAMETER_VALUE, key: nextKey(), isNew: true };
+        const param = { key: null, name: "", value: DEFAULT_PARAMETER_VALUE, uid: nextUid() };
         params.push(param);
         renderParams();
-        paramList.querySelector(`[data-param-key="${param.key}"]`)?.focus();
+        paramList.querySelector(`[data-param-uid="${param.uid}"]`)?.focus();
       },
     });
 
@@ -192,19 +197,20 @@ export function openCellDialog(matrix, row, column) {
     const formError = el("p", { class: "form-error", role: "alert", hidden: true });
 
     function validate() {
-      const seen = new Set();
-      for (const param of params) {
+      const normalize = (text) => text.trim().toLocaleLowerCase(getLanguage());
+      // Built-in labels count as taken, so "Custo" cannot be added twice.
+      const seen = new Set(params.filter(isBuiltInParameter).map((p) => normalize(parameterLabel(p))));
+      for (const param of params.filter((p) => !isBuiltInParameter(p))) {
         const name = param.name.trim();
-        if (!name) return "Informe o nome de todos os parâmetros.";
-        const normalized = name.toLocaleLowerCase("pt-BR");
-        if (seen.has(normalized)) return `O parâmetro "${name}" está repetido.`;
-        seen.add(normalized);
+        if (!name) return t("cell.paramNameRequired");
+        if (seen.has(normalize(name))) return t("cell.paramDuplicate", { name });
+        seen.add(normalize(name));
       }
       return null;
     }
 
-    const cancelButton = el("button", { type: "button", class: "btn", text: "Cancelar" });
-    const saveButton = el("button", { type: "submit", class: "btn btn-primary", text: "Salvar" });
+    const cancelButton = el("button", { type: "button", class: "btn", text: t("common.cancel") });
+    const saveButton = el("button", { type: "submit", class: "btn btn-primary", text: t("common.save") });
 
     let isSaving = false;
     function setSaving(saving) {
@@ -212,7 +218,7 @@ export function openCellDialog(matrix, row, column) {
       for (const button of [cancelButton, saveButton, uploadButton, removeButton, addParamButton]) {
         button.disabled = saving;
       }
-      saveButton.textContent = saving ? "Salvando…" : "Salvar";
+      saveButton.textContent = saving ? t("cell.saving") : t("common.save");
     }
 
     async function save(event) {
@@ -226,7 +232,7 @@ export function openCellDialog(matrix, row, column) {
       try {
         result = await api.updateCell(matrix.id, row.id, column.id, {
           solution_name: nameInput.value.trim(),
-          parameters: params.map(({ name, value }) => ({ name: name.trim(), value })),
+          parameters: params.map(({ key, name, value }) => (key ? { key, value } : { name: name.trim(), value })),
         });
         if (photo.pendingFile) {
           result = await api.uploadPhoto(matrix.id, row.id, column.id, photo.pendingFile);
@@ -240,12 +246,12 @@ export function openCellDialog(matrix, row, column) {
           errorMessage(
             error,
             {
-              404: "Esta função ou solução não existe mais.",
-              413: "A foto excede o limite de 5MB.",
-              415: "Formato inválido. Use uma foto JPG ou PNG.",
-              422: "Dados inválidos. Revise os campos.",
+              404: t("cell.gone"),
+              413: t("cell.tooLarge"),
+              415: t("cell.invalidType"),
+              422: t("cell.invalidData"),
             },
-            "Não foi possível salvar a solução.",
+            t("cell.saveError"),
           ),
           "error",
         );
@@ -262,15 +268,15 @@ export function openCellDialog(matrix, row, column) {
       el("h2", { id: titleId, class: "dialog-title", text: `${row.title} · ${columnLabel(column)}` }),
       el(
         "section",
-        { class: "cell-section", "aria-label": "Foto" },
+        { class: "cell-section", "aria-label": t("cell.photoSection") },
         preview,
         el("div", { class: "photo-actions" }, uploadButton, removeButton, fileInput),
-        el("p", { class: "hint", text: "JPG ou PNG, até 5MB." }),
+        el("p", { class: "hint", text: t("cell.photoHint") }),
       ),
       el(
         "div",
         { class: "cell-section" },
-        el("label", { class: "field-label", for: nameInput.id, text: "Nome da solução" }),
+        el("label", { class: "field-label", for: nameInput.id, text: t("cell.solutionName") }),
         nameInput,
       ),
       el(
@@ -279,8 +285,8 @@ export function openCellDialog(matrix, row, column) {
         el(
           "div",
           { class: "section-heading" },
-          el("h3", { id: "cell-params-title", class: "field-label", text: "Parâmetros" }),
-          el("span", { class: "hint", text: "1 = melhor · 5 = pior" }),
+          el("h3", { id: "cell-params-title", class: "field-label", text: t("cell.parameters") }),
+          el("span", { class: "hint", text: t("scale.hint") }),
         ),
         paramList,
         addParamButton,

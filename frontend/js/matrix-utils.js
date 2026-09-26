@@ -1,7 +1,10 @@
 // Pure helpers about the matrix data model, shared by editor and print views.
 
-// Mirrors backend defaults (models.py). User-facing, therefore in Portuguese.
-export const DEFAULT_PARAMETER_NAMES = ["Complexidade", "Custo"];
+import { t } from "./i18n.js";
+
+// Built-in parameters, mirroring backend defaults (models.py). They carry a
+// `key` and no stored name; the label comes from "parameter.{key}".
+export const DEFAULT_PARAMETER_KEYS = ["complexity", "cost"];
 export const DEFAULT_PARAMETER_VALUE = 3;
 export const PARAMETER_MIN = 1; // best (green)
 export const PARAMETER_MAX = 5; // worst (red)
@@ -20,10 +23,16 @@ export function printUrl(matrixId, combinationId) {
 /** Column label derived from its position: S1, S2, ... */
 export const columnLabel = (column) => `S${column.order + 1}`;
 
-export const isDefaultParameter = (name) => DEFAULT_PARAMETER_NAMES.includes(name);
+/** Built-in parameters cannot be renamed or removed. */
+export const isBuiltInParameter = (parameter) => Boolean(parameter.key);
+
+/** Display name: translated for built-in parameters, as typed for custom ones. */
+export function parameterLabel(parameter) {
+  return parameter.key ? t(`parameter.${parameter.key}`) : parameter.name ?? "";
+}
 
 export function defaultParameters() {
-  return DEFAULT_PARAMETER_NAMES.map((name) => ({ name, value: DEFAULT_PARAMETER_VALUE }));
+  return DEFAULT_PARAMETER_KEYS.map((key) => ({ key, name: null, value: DEFAULT_PARAMETER_VALUE }));
 }
 
 /** Stored cell, or an unsaved empty cell with default parameters. */
