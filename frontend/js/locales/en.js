@@ -34,6 +34,9 @@ export default {
   "page.editor": "Editor · Morphomatrix",
   "page.print": "Print · Morphomatrix",
 
+  // View options
+  "view.showParameters": "Show parameters",
+
   // Built-in parameters (see DEFAULT_PARAMETER_KEYS in matrix-utils.js)
   "parameter.complexity": "Complexity",
   "parameter.cost": "Cost",

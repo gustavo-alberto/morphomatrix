@@ -14,6 +14,7 @@ import {
 } from "./matrix-utils.js";
 import { applyStaticTranslations, initLanguageSelect, t } from "./i18n.js";
 import { initThemeToggle } from "./theme.js";
+import { getShowParameters, initShowParametersToggle } from "./view-prefs.js";
 import {
   NAME_MAX_LENGTH,
   choiceDialog,
@@ -37,6 +38,7 @@ const tableWrap = document.getElementById("table-wrap");
 
 let matrix = null;
 let busy = false;
+let showParameters = getShowParameters();
 
 // Active combination is remembered per matrix across reloads.
 const ACTIVE_COMBINATION_KEY = `morphomatrix.activeCombination.${matrixId}`;
@@ -460,7 +462,7 @@ function renderCellContent(cell, stored) {
       ? el("span", { class: "cell-name", text: cell.solution_name })
       : el("span", { class: "cell-name cell-name-empty", text: t("editor.noName") }),
   );
-  if (cell.parameters.length) {
+  if (showParameters && cell.parameters.length) {
     parts.push(
       el(
         "ul",
@@ -484,7 +486,8 @@ const cellPosition = (row, column) => `${row.title}, ${columnLabel(column)}`;
 function cellDescription(row, column, cell, stored) {
   const position = cellPosition(row, column);
   if (!stored) return t("editor.cellEmpty", { position });
-  const params = cell.parameters.map((p) => `${parameterLabel(p)} ${p.value}`).join(", ");
+  // Accessible name mirrors what is visible, so the simplified view stays simple.
+  const params = showParameters ? cell.parameters.map((p) => `${parameterLabel(p)} ${p.value}`).join(", ") : "";
   const name = cell.solution_name || t("editor.unnamed");
   return `${t("editor.cellSolution", { position, name })}${params ? ` (${params})` : ""}`;
 }
@@ -696,7 +699,7 @@ function renderTable() {
     el("tr", { class: "add-row" }, el("td", { colspan: solutionSpan + 1 }, addRowButton)),
   );
 
-  return el("table", { class: "matrix-table" }, thead, tbody);
+  return el("table", { class: showParameters ? "matrix-table" : "matrix-table params-hidden" }, thead, tbody);
 }
 
 function render() {
@@ -719,6 +722,10 @@ function render() {
 applyStaticTranslations();
 initLanguageSelect(document.getElementById("language-select"));
 initThemeToggle(document.getElementById("theme-toggle"));
+initShowParametersToggle(document.getElementById("show-parameters"), (show) => {
+  showParameters = show;
+  if (matrix) render();
+});
 document.getElementById("export-pdf").addEventListener("click", exportPdf);
 
 if (!matrixId) showFatal(null);

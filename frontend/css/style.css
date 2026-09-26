@@ -594,8 +594,79 @@ a {
   margin: 24px auto;
 }
 
-.editor-hint {
+/* Hint on the left, view options on the right, right above the table. */
+.view-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 16px;
   margin-bottom: 10px;
+}
+
+.editor-hint {
+  flex: 1 1 320px;
+}
+
+/* On/off switch built on a native checkbox (keyboard and screen reader ready). */
+.switch {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.switch input {
+  position: relative;
+  flex-shrink: 0;
+  width: 34px;
+  height: 20px;
+  margin: 0;
+  cursor: pointer;
+  /* Muted text color keeps the off track above 3:1 against the page. */
+  background: var(--color-text-muted);
+  border-radius: 999px;
+  transition: background-color 0.15s ease-out;
+  appearance: none;
+}
+
+.switch input::before {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  content: "";
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+  transition: transform 0.15s ease-out;
+}
+
+.switch input:checked {
+  background: var(--color-primary);
+}
+
+.switch input:checked::before {
+  transform: translateX(14px);
+}
+
+.switch input:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch input,
+  .switch input::before {
+    transition: none;
+  }
 }
 
 .table-wrap {
@@ -766,6 +837,11 @@ a {
 
 .cell-button:hover {
   background: var(--color-hover-accent);
+}
+
+/* Simplified view: without parameters, cells only need room for the name. */
+.matrix-table.params-hidden .cell-button {
+  min-height: 64px;
 }
 
 .cell-button:focus-visible {
