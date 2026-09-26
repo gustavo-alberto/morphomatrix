@@ -23,18 +23,13 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from .config import MATRICES_DIR
+from .errors import MatrixNotFoundError
 from .models import Matrix, MatrixSummary, new_matrix_id, utc_now
 
 logger = logging.getLogger(__name__)
 
 # Reentrant so helpers can be composed inside edit_matrix().
 _lock = threading.RLock()
-
-
-class MatrixNotFoundError(Exception):
-    def __init__(self, matrix_id: str) -> None:
-        super().__init__(f"Matrix not found: {matrix_id}")
-        self.matrix_id = matrix_id
 
 
 # --- Paths -------------------------------------------------------------------
@@ -58,6 +53,7 @@ def _json_path(matrix_id: str) -> Path:
 
 
 def matrix_dir(matrix_id: str) -> Path:
+    _require_valid_id(matrix_id)
     return MATRICES_DIR / matrix_id
 
 

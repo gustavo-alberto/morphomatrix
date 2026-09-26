@@ -112,3 +112,39 @@ class MatrixCreate(BaseModel):
 
 class MatrixUpdate(BaseModel):
     name: Name
+
+
+class RowCreate(BaseModel):
+    # When omitted, a default title ("Função N") is generated.
+    title: Name | None = None
+
+
+class RowUpdate(BaseModel):
+    title: Name
+
+
+class ReorderRequest(BaseModel):
+    # Must contain every existing id exactly once, in the desired order.
+    ids: list[str]
+
+
+class CellUpdate(BaseModel):
+    solution_name: Annotated[
+        str, StringConstraints(strip_whitespace=True, max_length=NAME_MAX_LENGTH)
+    ] = ""
+    parameters: list[Parameter]
+
+
+# --- Responses ---------------------------------------------------------------
+
+
+class AffectedCombination(BaseModel):
+    id: str
+    name: str
+
+
+class RemovalResponse(BaseModel):
+    """Result of deleting a row/column, listing combinations that lost a selection."""
+
+    matrix: Matrix
+    affected_combinations: list[AffectedCombination]
