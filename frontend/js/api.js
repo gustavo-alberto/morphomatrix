@@ -42,10 +42,35 @@ export const api = {
   renameMatrix: (id, name) => request("PUT", matrixPath(id), { json: { name } }),
   deleteMatrix: (id) => request("DELETE", matrixPath(id)),
 
-  importMatrix: (file) => {
-    const form = new FormData();
-    form.append("file", file);
-    return request("POST", "/api/matrices/import", { body: form });
-  },
+  importMatrix: (file) => request("POST", "/api/matrices/import", { body: fileForm(file) }),
   exportUrl: (id) => `${matrixPath(id)}/export`,
+
+  // Rows
+  addRow: (id) => request("POST", `${matrixPath(id)}/rows`),
+  renameRow: (id, rowId, title) =>
+    request("PUT", `${matrixPath(id)}/rows/${encodeURIComponent(rowId)}`, { json: { title } }),
+  reorderRows: (id, ids) => request("PUT", `${matrixPath(id)}/rows/reorder`, { json: { ids } }),
+  deleteRow: (id, rowId) => request("DELETE", `${matrixPath(id)}/rows/${encodeURIComponent(rowId)}`),
+
+  // Columns
+  addColumn: (id) => request("POST", `${matrixPath(id)}/columns`),
+  reorderColumns: (id, ids) => request("PUT", `${matrixPath(id)}/columns/reorder`, { json: { ids } }),
+  deleteColumn: (id, columnId) =>
+    request("DELETE", `${matrixPath(id)}/columns/${encodeURIComponent(columnId)}`),
+
+  // Cells
+  updateCell: (id, rowId, columnId, cell) => request("PUT", cellPath(id, rowId, columnId), { json: cell }),
+  uploadPhoto: (id, rowId, columnId, file) =>
+    request("POST", `${cellPath(id, rowId, columnId)}/photo`, { body: fileForm(file) }),
+  deletePhoto: (id, rowId, columnId) => request("DELETE", `${cellPath(id, rowId, columnId)}/photo`),
 };
+
+function cellPath(id, rowId, columnId) {
+  return `${matrixPath(id)}/cells/${encodeURIComponent(rowId)}/${encodeURIComponent(columnId)}`;
+}
+
+function fileForm(file) {
+  const form = new FormData();
+  form.append("file", file);
+  return form;
+}

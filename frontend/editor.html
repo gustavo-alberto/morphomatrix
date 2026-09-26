@@ -6,13 +6,27 @@
   <title>Editor · Morphomatrix</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/editor.js"></script>
 </head>
 <body>
   <header class="app-header">
-    <a class="back-link" href="./">← Matrizes</a>
+    <div class="header-start">
+      <a class="back-link" href="./">← Matrizes</a>
+      <h1 class="app-title matrix-title" id="matrix-title"></h1>
+    </div>
+    <div class="toolbar" id="editor-toolbar" hidden>
+      <a class="btn" id="export-backup" download>Exportar backup</a>
+    </div>
   </header>
-  <main class="page">
-    <p class="empty-state">O editor da matriz será implementado na próxima etapa.</p>
+
+  <main class="editor-page">
+    <p id="editor-status" class="empty-state" role="status">Carregando…</p>
+    <div id="editor-content" hidden>
+      <p class="hint editor-hint">Clique numa célula para editar a solução.</p>
+      <div id="table-wrap" class="table-wrap"></div>
+    </div>
   </main>
+
+  <div id="toast-region" class="toast-region" aria-live="polite"></div>
 </body>
 </html>
