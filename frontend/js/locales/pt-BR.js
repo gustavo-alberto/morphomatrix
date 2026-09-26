@@ -106,8 +106,6 @@ export default {
   "editor.addColumn": "+ Solução",
   "editor.addColumnLabel": "Adicionar coluna de solução",
   "editor.noSolutions": "Nenhuma solução",
-  "editor.moveLeft": "Mover {label} para a esquerda",
-  "editor.moveRight": "Mover {label} para a direita",
   "editor.deleteColumnLabel": "Excluir coluna {label}",
   "editor.deleteColumnTitle": "Excluir coluna",
   "editor.deleteColumnMessage":

@@ -79,7 +79,7 @@ def _renumber(items: list[Row] | list[Column]) -> None:
         item.order = index
 
 
-def _reordered[T: (Row, Column)](items: list[T], ids: list[str]) -> list[T]:
+def _reordered(items: list[Row], ids: list[str]) -> list[Row]:
     by_id = {item.id: item for item in items}
     if len(ids) != len(by_id) or set(ids) != set(by_id):
         raise InvalidOperationError("ids must contain every existing id exactly once")
@@ -141,11 +141,6 @@ def add_column(matrix: Matrix) -> Column:
     column = Column(id=new_item_id(), order=len(matrix.columns))
     matrix.columns.append(column)
     return column
-
-
-def reorder_columns(matrix: Matrix, ids: list[str]) -> None:
-    matrix.columns = _reordered(matrix.columns, ids)
-    _renumber(matrix.columns)
 
 
 def delete_column(matrix: Matrix, column_id: str) -> RemovalResult:

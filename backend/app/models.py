@@ -147,7 +147,7 @@ class RowUpdate(BaseModel):
 
 
 class ReorderRequest(BaseModel):
-    # Must contain every existing id exactly once, in the desired order.
+    # Row order: must contain every existing row id exactly once, in the desired order.
     ids: list[str]
 
 

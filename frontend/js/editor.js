@@ -204,21 +204,6 @@ function addColumn() {
   });
 }
 
-function moveColumn(index, delta) {
-  const ids = moveId(matrix.columns.map((c) => c.id), index, delta);
-  if (!ids) return;
-  const columnId = matrix.columns[index].id;
-  const direction = delta < 0 ? "left" : "right";
-  const opposite = delta < 0 ? "right" : "left";
-  run(async () => {
-    setMatrix(
-      await api.reorderColumns(matrixId, ids),
-      `col-${direction}-${columnId}`,
-      `col-${opposite}-${columnId}`,
-    );
-  });
-}
-
 async function deleteColumn(column) {
   const label = columnLabel(column);
   const confirmed = await confirmDialog({
@@ -367,9 +352,10 @@ function iconButton({ label, symbol, focus, disabled = false, onClick }) {
   });
 }
 
-function renderColumnHeader(column, index) {
+// Columns cannot be moved: a column spans every function, so reordering it
+// would shuffle the whole set of solutions. Only deletion is offered.
+function renderColumnHeader(column) {
   const label = columnLabel(column);
-  const last = matrix.columns.length - 1;
   return el(
     "th",
     { scope: "col", class: "col-header" },
@@ -380,20 +366,6 @@ function renderColumnHeader(column, index) {
       el(
         "div",
         { class: "header-controls" },
-        iconButton({
-          label: t("editor.moveLeft", { label }),
-          symbol: "←",
-          focus: `col-left-${column.id}`,
-          disabled: index === 0,
-          onClick: () => moveColumn(index, -1),
-        }),
-        iconButton({
-          label: t("editor.moveRight", { label }),
-          symbol: "→",
-          focus: `col-right-${column.id}`,
-          disabled: index === last,
-          onClick: () => moveColumn(index, 1),
-        }),
         iconButton({
           label: t("editor.deleteColumnLabel", { label }),
           symbol: "✕",

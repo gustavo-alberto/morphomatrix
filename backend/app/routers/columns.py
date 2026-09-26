@@ -3,7 +3,7 @@
 from fastapi import APIRouter, status
 
 from .. import domain, photos, storage
-from ..models import Matrix, ReorderRequest, RemovalResponse
+from ..models import Matrix, RemovalResponse
 
 router = APIRouter(prefix="/api/matrices/{matrix_id}/columns", tags=["columns"])
 
@@ -15,12 +15,8 @@ def add_column(matrix_id: str) -> Matrix:
     return matrix
 
 
-# Declared before "/{column_id}" routes for consistency with rows.
-@router.put("/reorder", response_model=Matrix)
-def reorder_columns(matrix_id: str, payload: ReorderRequest) -> Matrix:
-    with storage.edit_matrix(matrix_id) as matrix:
-        domain.reorder_columns(matrix, payload.ids)
-    return matrix
+# Columns are not reorderable: a column holds one solution for every function,
+# so moving it would shuffle the whole set. Rows can be reordered.
 
 
 @router.delete("/{column_id}", response_model=RemovalResponse)
