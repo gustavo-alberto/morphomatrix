@@ -26,6 +26,11 @@ Name = Annotated[
     StringConstraints(strip_whitespace=True, min_length=1, max_length=NAME_MAX_LENGTH),
 ]
 ParameterValue = Annotated[int, Field(ge=PARAMETER_MIN, le=PARAMETER_MAX)]
+# Hex color, e.g. "#4f9dde"; stored lowercase.
+Color = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, to_lower=True, pattern=r"^#[0-9a-fA-F]{6}$"),
+]
 
 
 def utc_now() -> datetime:
@@ -133,6 +138,30 @@ class CellUpdate(BaseModel):
         str, StringConstraints(strip_whitespace=True, max_length=NAME_MAX_LENGTH)
     ] = ""
     parameters: list[Parameter]
+
+
+class CombinationCreate(BaseModel):
+    # When omitted, a default name ("Combinação N") and a palette color are used.
+    name: Name | None = None
+    color: Color | None = None
+
+
+class CombinationUpdate(BaseModel):
+    # Partial update: only provided fields are changed.
+    name: Name | None = None
+    color: Color | None = None
+    # Replaces all selections (row_id -> column_id).
+    selections: dict[str, str] | None = None
+
+
+class CombinationDuplicate(BaseModel):
+    # When omitted, the copy is named "{original} (cópia)".
+    name: Name | None = None
+
+
+class SelectionToggle(BaseModel):
+    row_id: str
+    column_id: str
 
 
 # --- Responses ---------------------------------------------------------------

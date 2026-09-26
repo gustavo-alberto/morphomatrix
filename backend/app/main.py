@@ -18,7 +18,7 @@ from .errors import (
     UnsupportedPhotoTypeError,
 )
 from .photos import MAX_PHOTO_BYTES
-from .routers import cells, columns, matrices, rows
+from .routers import cells, columns, combinations, matrices, rows
 
 
 @asynccontextmanager
@@ -72,6 +72,7 @@ app.include_router(matrices.router)
 app.include_router(rows.router)
 app.include_router(columns.router)
 app.include_router(cells.router)
+app.include_router(combinations.router)
 
 # Must be the last mount: it catches everything that is not an API route.
 app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

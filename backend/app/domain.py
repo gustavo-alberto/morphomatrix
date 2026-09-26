@@ -12,6 +12,7 @@ from .models import (
     AffectedCombination,
     Cell,
     Column,
+    Combination,
     Matrix,
     Parameter,
     Row,
@@ -19,8 +20,23 @@ from .models import (
     new_item_id,
 )
 
-# User-facing label, therefore kept in Portuguese.
+# User-facing labels, therefore kept in Portuguese.
 DEFAULT_ROW_TITLE = "Função {n}"
+DEFAULT_COMBINATION_NAME = "Combinação {n}"
+DUPLICATE_COMBINATION_NAME = "{name} (cópia)"
+
+# Combination colors, assigned in order (first unused wins). Pure green/red
+# are avoided so they do not clash with the 1-5 parameter scale colors.
+COMBINATION_PALETTE = (
+    "#4f9dde",  # blue
+    "#9b5de5",  # purple
+    "#f4a261",  # orange
+    "#2a9d8f",  # teal
+    "#e76f9a",  # pink
+    "#3d5a80",  # navy
+    "#c9a227",  # gold
+    "#6c757d",  # gray
+)
 
 
 @dataclass
@@ -45,6 +61,13 @@ def find_column(matrix: Matrix, column_id: str) -> Column:
         if column.id == column_id:
             return column
     raise NotFoundError("Column", column_id)
+
+
+def find_combination(matrix: Matrix, combination_id: str) -> Combination:
+    for combination in matrix.combinations:
+        if combination.id == combination_id:
+            return combination
+    raise NotFoundError("Combination", combination_id)
 
 
 # --- Helpers -----------------------------------------------------------------
@@ -167,3 +190,90 @@ def update_cell(
     cell.solution_name = solution_name
     cell.parameters = parameters
     return cell
+
+
+# --- Combinations ------------------------------------------------------------
+
+
+def _next_color(matrix: Matrix) -> str:
+    used = {c.color for c in matrix.combinations}
+    for color in COMBINATION_PALETTE:
+        if color not in used:
+            return color
+    return COMBINATION_PALETTE[len(matrix.combinations) % len(COMBINATION_PALETTE)]
+
+
+def _validate_selections(matrix: Matrix, selections: dict[str, str]) -> None:
+    """Every key must be an existing row and every value an existing column.
+
+    Being a dict, a selection map already holds at most one column per row.
+    """
+    row_ids = {r.id for r in matrix.rows}
+    column_ids = {c.id for c in matrix.columns}
+    unknown_rows = sorted(set(selections) - row_ids)
+    unknown_columns = sorted(set(selections.values()) - column_ids)
+    if unknown_rows or unknown_columns:
+        raise InvalidOperationError(
+            f"Unknown ids in selections: rows={unknown_rows}, columns={unknown_columns}"
+        )
+
+
+def add_combination(matrix: Matrix, name: str | None = None, color: str | None = None) -> Combination:
+    combination = Combination(
+        id=new_item_id(),
+        name=name or DEFAULT_COMBINATION_NAME.format(n=len(matrix.combinations) + 1),
+        color=color or _next_color(matrix),
+    )
+    matrix.combinations.append(combination)
+    return combination
+
+
+def update_combination(
+    matrix: Matrix,
+    combination_id: str,
+    name: str | None = None,
+    color: str | None = None,
+    selections: dict[str, str] | None = None,
+) -> Combination:
+    combination = find_combination(matrix, combination_id)
+    if selections is not None:
+        _validate_selections(matrix, selections)
+        combination.selections = dict(selections)
+    if name is not None:
+        combination.name = name
+    if color is not None:
+        combination.color = color
+    return combination
+
+
+def toggle_selection(matrix: Matrix, combination_id: str, row_id: str, column_id: str) -> Combination:
+    """Select `column_id` for `row_id`, or unselect it if already selected.
+
+    Selecting replaces any previous selection on the same row.
+    """
+    combination = find_combination(matrix, combination_id)
+    find_row(matrix, row_id)
+    find_column(matrix, column_id)
+    if combination.selections.get(row_id) == column_id:
+        del combination.selections[row_id]
+    else:
+        combination.selections[row_id] = column_id
+    return combination
+
+
+def duplicate_combination(matrix: Matrix, combination_id: str, name: str | None = None) -> Combination:
+    """Copy a combination (selections included) right after the original."""
+    original = find_combination(matrix, combination_id)
+    copy = Combination(
+        id=new_item_id(),
+        name=name or DUPLICATE_COMBINATION_NAME.format(name=original.name),
+        color=_next_color(matrix),
+        selections=dict(original.selections),
+    )
+    index = matrix.combinations.index(original)
+    matrix.combinations.insert(index + 1, copy)
+    return copy
+
+
+def delete_combination(matrix: Matrix, combination_id: str) -> None:
+    matrix.combinations.remove(find_combination(matrix, combination_id))
