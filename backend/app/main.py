@@ -12,13 +12,15 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import FRONTEND_DIR, MATRICES_DIR
 from .errors import (
+    BackupTooLargeError,
+    InvalidBackupError,
     InvalidOperationError,
     NotFoundError,
     PhotoTooLargeError,
     UnsupportedPhotoTypeError,
 )
 from .photos import MAX_PHOTO_BYTES
-from .routers import cells, columns, combinations, matrices, rows
+from .routers import backup, cells, columns, combinations, matrices, rows
 
 
 @asynccontextmanager
@@ -63,6 +65,22 @@ async def unsupported_photo_handler(_: Request, __: UnsupportedPhotoTypeError) -
     )
 
 
+@app.exception_handler(InvalidBackupError)
+async def invalid_backup_handler(_: Request, exc: InvalidBackupError) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        content={"detail": str(exc)},
+    )
+
+
+@app.exception_handler(BackupTooLargeError)
+async def backup_too_large_handler(_: Request, __: BackupTooLargeError) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+        content={"detail": "Backup exceeds size limits"},
+    )
+
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -73,6 +91,7 @@ app.include_router(rows.router)
 app.include_router(columns.router)
 app.include_router(cells.router)
 app.include_router(combinations.router)
+app.include_router(backup.router)
 
 # Must be the last mount: it catches everything that is not an API route.
 app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

@@ -277,3 +277,36 @@ def duplicate_combination(matrix: Matrix, combination_id: str, name: str | None 
 
 def delete_combination(matrix: Matrix, combination_id: str) -> None:
     matrix.combinations.remove(find_combination(matrix, combination_id))
+
+
+# --- Consistency -------------------------------------------------------------
+
+
+def normalize(matrix: Matrix) -> list[str]:
+    """Repair a matrix loaded from an external source (e.g. backup import).
+
+    Sorts and renumbers rows/columns and drops cells or selections that point
+    to rows/columns that do not exist. Returns a description of each repair.
+    """
+    repairs: list[str] = []
+
+    matrix.rows.sort(key=lambda r: r.order)
+    matrix.columns.sort(key=lambda c: c.order)
+    _renumber(matrix.rows)
+    _renumber(matrix.columns)
+
+    row_ids = {r.id for r in matrix.rows}
+    column_ids = {c.id for c in matrix.columns}
+    valid_keys = {cell_key(r, c) for r in row_ids for c in column_ids}
+
+    for key in [k for k in matrix.cells if k not in valid_keys]:
+        del matrix.cells[key]
+        repairs.append(f"dropped orphan cell {key}")
+
+    for combination in matrix.combinations:
+        for row_id, column_id in list(combination.selections.items()):
+            if row_id not in row_ids or column_id not in column_ids:
+                del combination.selections[row_id]
+                repairs.append(f"dropped orphan selection {row_id}->{column_id} in {combination.id}")
+
+    return repairs

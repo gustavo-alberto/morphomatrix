@@ -25,3 +25,11 @@ class PhotoTooLargeError(Exception):
 
 class UnsupportedPhotoTypeError(Exception):
     """Uploaded file is not a JPG/PNG image. Maps to 415."""
+
+
+class InvalidBackupError(Exception):
+    """Uploaded file is not a valid backup zip. Maps to 422."""
+
+
+class BackupTooLargeError(Exception):
+    """Uploaded backup exceeds the size limits. Maps to 413."""

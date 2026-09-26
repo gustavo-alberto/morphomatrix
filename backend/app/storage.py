@@ -119,6 +119,15 @@ def create_matrix(name: str) -> Matrix:
     return matrix
 
 
+def insert_matrix(matrix: Matrix) -> None:
+    """Persist a fully built matrix under a new id (used by backup import)."""
+    _require_valid_id(matrix.id)
+    with _lock:
+        if _json_path(matrix.id).exists():
+            raise FileExistsError(f"Matrix already exists: {matrix.id}")
+        _write(matrix)
+
+
 def get_matrix(matrix_id: str) -> Matrix:
     with _lock:
         return _read(matrix_id)
