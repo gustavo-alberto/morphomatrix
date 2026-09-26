@@ -51,7 +51,7 @@ Button names below are shown as they appear in the English interface.
 - Click a function name to rename it (Enter saves, Esc cancels).
 - Use the arrows to reorder rows and columns, and ✕ to delete them. Deleting a row or column also removes it from any combination.
 - Click a cell to edit it: photo (JPG/PNG/WebP, up to 5MB), solution name and parameters on a 1–5 scale (1 = best, 5 = worst). Use **+ Add parameter** for extra parameters. Changes apply on **Save**.
-- Parameters are hidden in the table by default for a simpler view. Turn on **Show parameters** (above the table, and in the print view) to display them; the choice is remembered and also applies to the PDF.
+- The matrix opens in a simplified view. Turn on **Detailed view** (above the table, and in the print view) to also show the parameters and the colored dots marking which combinations use each solution. The choice is remembered and also applies to the PDF (parameters and scale legend).
 
 ### Combinations
 

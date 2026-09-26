@@ -16,7 +16,7 @@ import {
 import { applyStaticTranslations, initLanguageSelect, t, tn } from "./i18n.js";
 import { initThemeToggle } from "./theme.js";
 import { el, errorMessage, formatDateTime } from "./ui.js";
-import { getShowParameters, initShowParametersToggle } from "./view-prefs.js";
+import { getDetailedView, initDetailedViewToggle } from "./view-prefs.js";
 
 const params = new URLSearchParams(window.location.search);
 const matrixId = params.get("id");
@@ -26,7 +26,8 @@ const toolbarEl = document.getElementById("print-toolbar");
 const statusEl = document.getElementById("print-status");
 const contentEl = document.getElementById("print-content");
 
-let showParameters = getShowParameters();
+// Detailed view adds parameters and the scale legend to the printout.
+let detailedView = getDetailedView();
 
 // --- File name --------------------------------------------------------------
 
@@ -75,7 +76,7 @@ function renderCell(matrix, row, column, combination) {
     td.append(el("img", { class: "print-photo", src: photoUrl(matrix.id, cell.photo), alt: cell.solution_name || "" }));
   }
   if (cell.solution_name) td.append(el("div", { class: "print-solution", text: cell.solution_name }));
-  if (showParameters && cell.parameters.length) {
+  if (detailedView && cell.parameters.length) {
     td.append(
       el(
         "ul",
@@ -229,11 +230,11 @@ async function main() {
       renderHeader(matrix, combination),
       renderTable(matrix, combination),
       // The scale legend only makes sense when parameters are shown.
-      showParameters ? renderLegend() : "",
+      detailedView ? renderLegend() : "",
     );
   renderContent();
-  initShowParametersToggle(document.getElementById("show-parameters"), (show) => {
-    showParameters = show;
+  initDetailedViewToggle(document.getElementById("detailed-view"), (detailed) => {
+    detailedView = detailed;
     renderContent();
   });
   document.getElementById("back-to-editor").href = `editor.html?id=${encodeURIComponent(matrix.id)}`;

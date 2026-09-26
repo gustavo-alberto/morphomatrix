@@ -14,7 +14,7 @@ import {
 } from "./matrix-utils.js";
 import { applyStaticTranslations, initLanguageSelect, t } from "./i18n.js";
 import { initThemeToggle } from "./theme.js";
-import { getShowParameters, initShowParametersToggle } from "./view-prefs.js";
+import { getDetailedView, initDetailedViewToggle } from "./view-prefs.js";
 import {
   NAME_MAX_LENGTH,
   choiceDialog,
@@ -38,7 +38,8 @@ const tableWrap = document.getElementById("table-wrap");
 
 let matrix = null;
 let busy = false;
-let showParameters = getShowParameters();
+// Detailed view adds parameters and combination dots to the cells.
+let detailedView = getDetailedView();
 
 // Active combination is remembered per matrix across reloads.
 const ACTIVE_COMBINATION_KEY = `morphomatrix.activeCombination.${matrixId}`;
@@ -462,7 +463,7 @@ function renderCellContent(cell, stored) {
       ? el("span", { class: "cell-name", text: cell.solution_name })
       : el("span", { class: "cell-name cell-name-empty", text: t("editor.noName") }),
   );
-  if (showParameters && cell.parameters.length) {
+  if (detailedView && cell.parameters.length) {
     parts.push(
       el(
         "ul",
@@ -487,7 +488,7 @@ function cellDescription(row, column, cell, stored) {
   const position = cellPosition(row, column);
   if (!stored) return t("editor.cellEmpty", { position });
   // Accessible name mirrors what is visible, so the simplified view stays simple.
-  const params = showParameters ? cell.parameters.map((p) => `${parameterLabel(p)} ${p.value}`).join(", ") : "";
+  const params = detailedView ? cell.parameters.map((p) => `${parameterLabel(p)} ${p.value}`).join(", ") : "";
   const name = cell.solution_name || t("editor.unnamed");
   return `${t("editor.cellSolution", { position, name })}${params ? ` (${params})` : ""}`;
 }
@@ -521,8 +522,12 @@ function renderCell(row, column) {
   const memberships = matrix.combinations.filter((c) => c.selections[row.id] === column.id);
   const selected = Boolean(active && active.selections[row.id] === column.id);
 
+  // Simplified view: no membership dots, except the active combination's
+  // check mark on the selected cell (selection must not rely on color alone).
+  const visibleMemberships = detailedView ? memberships : memberships.filter((c) => c.id === active?.id);
+
   const labelParts = [cellDescription(row, column, cell, stored)];
-  if (memberships.length) {
+  if (detailedView && memberships.length) {
     labelParts.push(t("editor.cellInCombinations", { names: memberships.map((c) => c.name).join(", ") }));
   }
   if (active) labelParts.push(t("editor.cellChooseIn", { name: active.name }));
@@ -547,7 +552,7 @@ function renderCell(row, column) {
         "aria-pressed": active ? String(selected) : null,
         onClick: () => (active ? toggleCell(row, column) : editCell(row, column)),
       },
-      renderMemberships(memberships, active?.id),
+      renderMemberships(visibleMemberships, active?.id),
       ...content,
     ),
     // While selecting, the cell click toggles; editing needs its own button.
@@ -699,7 +704,7 @@ function renderTable() {
     el("tr", { class: "add-row" }, el("td", { colspan: solutionSpan + 1 }, addRowButton)),
   );
 
-  return el("table", { class: showParameters ? "matrix-table" : "matrix-table params-hidden" }, thead, tbody);
+  return el("table", { class: detailedView ? "matrix-table" : "matrix-table view-simple" }, thead, tbody);
 }
 
 function render() {
@@ -722,8 +727,8 @@ function render() {
 applyStaticTranslations();
 initLanguageSelect(document.getElementById("language-select"));
 initThemeToggle(document.getElementById("theme-toggle"));
-initShowParametersToggle(document.getElementById("show-parameters"), (show) => {
-  showParameters = show;
+initDetailedViewToggle(document.getElementById("detailed-view"), (detailed) => {
+  detailedView = detailed;
   if (matrix) render();
 });
 document.getElementById("export-pdf").addEventListener("click", exportPdf);

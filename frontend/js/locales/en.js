@@ -35,7 +35,7 @@ export default {
   "page.print": "Print · Morphomatrix",
 
   // View options
-  "view.showParameters": "Show parameters",
+  "view.detailed": "Detailed view",
 
   // Built-in parameters (see DEFAULT_PARAMETER_KEYS in matrix-utils.js)
   "parameter.complexity": "Complexity",
