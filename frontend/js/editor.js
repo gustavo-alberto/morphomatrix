@@ -1,7 +1,8 @@
 // Matrix editor: table of functions (rows) x solutions (columns).
 
 import { ApiError, api } from "./api.js";
-import { openCellDialog } from "./cell-dialog.js";
+import { imageErrorMessage, openCellDialog } from "./cell-dialog.js";
+import { fileFromDrop, guardWindowDrops, imageFromClipboard, isImageDrag, isTextPaste } from "./image-input.js";
 import {
   NO_COMBINATION,
   columnNumber,
@@ -252,11 +253,92 @@ function removalMessage(message, affected) {
 
 // --- Cells ------------------------------------------------------------------
 
-async function editCell(row, column, focusKey = `cell-${row.id}-${column.id}`) {
-  if (busy) return;
-  const next = await openCellDialog(matrix, row, column);
+let cellDialogOpen = false;
+
+async function editCell(row, column, focusKey = `cell-${row.id}-${column.id}`, initialFile = null) {
+  if (busy || cellDialogOpen) return;
+  cellDialogOpen = true;
+  let next;
+  try {
+    next = await openCellDialog(matrix, row, column, { initialFile });
+  } finally {
+    cellDialogOpen = false;
+  }
   if (next) setMatrix(next, focusKey);
   else focusFirst([focusKey]);
+}
+
+// --- Paste / drop images onto cells -----------------------------------------
+//
+// Dropping or pasting an image on a cell opens its dialog with the image as
+// the pending photo; nothing is uploaded until the user clicks Save, so an
+// existing photo is never replaced without confirmation.
+
+let hoveredCell = null;
+
+function cellFromElement(element) {
+  const td = element?.closest?.("td.cell[data-row][data-column]");
+  if (!td || !tableWrap.contains(td)) return null;
+  const row = matrix?.rows.find((r) => r.id === td.dataset.row);
+  const column = matrix?.columns.find((c) => c.id === td.dataset.column);
+  return row && column ? { td, row, column } : null;
+}
+
+function openCellWithImage(target, file) {
+  editCell(target.row, target.column, `cell-${target.row.id}-${target.column.id}`, file);
+}
+
+function initCellImageTargets() {
+  tableWrap.addEventListener("pointerover", (event) => {
+    hoveredCell = cellFromElement(event.target)?.td ?? null;
+  });
+  tableWrap.addEventListener("pointerleave", () => {
+    hoveredCell = null;
+  });
+
+  let dropTd = null;
+  const setDropTd = (td) => {
+    if (dropTd === td) return;
+    dropTd?.classList.remove("cell-drop-target");
+    dropTd = td;
+    dropTd?.classList.add("cell-drop-target");
+  };
+  tableWrap.addEventListener("dragover", (event) => {
+    const target = isImageDrag(event.dataTransfer) && !busy ? cellFromElement(event.target) : null;
+    setDropTd(target?.td ?? null);
+    if (!target) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  });
+  tableWrap.addEventListener("dragleave", (event) => {
+    if (!tableWrap.contains(event.relatedTarget)) setDropTd(null);
+  });
+  tableWrap.addEventListener("drop", (event) => {
+    const target = cellFromElement(event.target);
+    setDropTd(null);
+    if (!target || !isImageDrag(event.dataTransfer)) return;
+    event.preventDefault();
+    try {
+      openCellWithImage(target, fileFromDrop(event.dataTransfer));
+    } catch (error) {
+      toast(imageErrorMessage(error), "error");
+    }
+  });
+
+  // Ctrl+V on the page: target the focused cell, else the hovered one.
+  // The cell dialog handles its own pastes; other dialogs and text fields
+  // (e.g. inline row rename) are left alone.
+  document.addEventListener("paste", (event) => {
+    if (!matrix || document.querySelector("dialog[open]") || isTextPaste(event)) return;
+    const file = imageFromClipboard(event.clipboardData);
+    if (!file) return;
+    event.preventDefault();
+    const target = cellFromElement(document.activeElement) ?? cellFromElement(hoveredCell);
+    if (target) openCellWithImage(target, file);
+    else toast(t("editor.pasteNoTarget"), "info");
+  });
+
+  guardWindowDrops();
 }
 
 /** Mark/unmark a solution for its row in the active combination. */
@@ -540,7 +622,9 @@ function renderCell(row, column) {
     "td",
     {
       class: `cell${active ? " cell-selectable" : ""}${selected ? " cell-selected" : ""}`,
+      "data-row": row.id,
       "data-column": column.id,
+      "data-drop-label": t("cell.dropHere"),
     },
     el(
       "button",
@@ -733,6 +817,8 @@ initDetailedViewToggle(document.getElementById("detailed-view"), (detailed) => {
   if (matrix) render();
 });
 document.getElementById("export-pdf").addEventListener("click", exportPdf);
+
+initCellImageTargets();
 
 if (!matrixId) showFatal(null);
 else reload();

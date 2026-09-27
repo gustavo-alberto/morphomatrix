@@ -81,7 +81,9 @@ export default {
   "editor.exportPdf": "Exportar PDF",
   "editor.exportBackup": "Exportar backup",
   "editor.actionError": "Não foi possível concluir a ação.",
-  "editor.hintEditing": "Clique numa célula para editar a solução. Selecione uma combinação para escolher soluções.",
+  "editor.hintEditing":
+    "Clique numa célula para editar a solução, ou cole (Ctrl+V) ou arraste uma imagem sobre ela. Selecione uma combinação para escolher soluções.",
+  "editor.pasteNoTarget": "Passe o mouse sobre uma célula ou selecione-a antes de colar a imagem.",
   "editor.hintSelecting":
     'Clique numa célula para marcá-la ou desmarcá-la em "{name}" (uma solução por função). Use ✎ para editar a solução.',
 
@@ -170,8 +172,16 @@ export default {
   "cell.removePhoto": "Remover foto",
   "cell.removePhotoMessage": "A foto desta solução será removida ao salvar.",
   "cell.remove": "Remover",
-  "cell.photoHint": "JPG, PNG ou WebP, até 5MB.",
-  "cell.invalidType": "Formato inválido. Use uma foto JPG, PNG ou WebP.",
+  "cell.photoHint":
+    "Envie, cole (Ctrl+V) ou arraste uma imagem. JPG, PNG ou WebP; imagens maiores que 5MB são reduzidas automaticamente.",
+  "cell.invalidType": "Formato inválido. Use uma imagem JPG, PNG ou WebP.",
+  "cell.dropHere": "Solte a imagem aqui",
+  "cell.processing": "Processando imagem…",
+  "cell.pendingPhoto": "Nova foto pronta. Clique em Salvar para aplicar.",
+  "cell.convertedPhoto": "Imagem reduzida para WebP ({size}) para caber no limite. Clique em Salvar para aplicar.",
+  "cell.shrinkFailed": "Não foi possível reduzir a imagem para menos de 5MB.",
+  "cell.remoteImage":
+    "Não foi possível obter a imagem arrastada de outro site. Use \"Copiar imagem\" e cole aqui com Ctrl+V, ou salve o arquivo e arraste-o.",
   "cell.tooLarge": "A foto excede o limite de 5MB.",
   "cell.solutionName": "Nome da solução",
   "cell.namePlaceholder": "Ex.: Motor elétrico",

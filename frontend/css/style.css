@@ -1084,6 +1084,47 @@ a {
   color: var(--color-text-muted);
 }
 
+/* Drop targets (cell dialog preview and table cells) while dragging an image. */
+.photo-preview,
+.matrix-table td.cell {
+  position: relative;
+}
+
+.photo-preview.is-drop-target,
+.matrix-table td.cell-drop-target {
+  outline: 2px dashed var(--color-focus);
+  outline-offset: -4px;
+}
+
+.photo-preview.is-drop-target::after,
+.matrix-table td.cell-drop-target::after {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: center;
+  pointer-events: none;
+  content: attr(data-drop-label);
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  border-radius: inherit;
+}
+
+.photo-status {
+  min-height: 1.4em;
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.photo-status:empty {
+  display: none;
+}
+
 .photo-actions {
   display: flex;
   gap: 8px;
