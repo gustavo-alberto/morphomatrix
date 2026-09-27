@@ -50,6 +50,7 @@ Button names below are shown as they appear in the English interface.
 - **+ Function** adds a row (function); **+ Solution** adds a column (solution). Columns have no name: each cell is identified by its function and its solution name.
 - Click a function name to rename it (Enter saves, Esc cancels).
 - Use the ↑ ↓ arrows to reorder functions. Solution columns keep their position, since each one spans every function. Use ✕ to delete a function or a column; this also removes it from any combination.
+- Add a photo by pasting (Ctrl+V) or dragging an image onto a cell, or inside the cell dialog. Screenshots and "Copy image" from the browser work; to paste on the table, hover over or select the cell first. The dialog opens with the new photo, which is only applied on **Save**. Images over 5MB, or in other formats the browser can read, are converted to WebP automatically. Images dragged directly from another website are not supported: copy and paste them instead.
 - Click a cell to edit it: photo (JPG/PNG/WebP, up to 5MB), solution name and parameters on a 1–5 scale (1 = best, 5 = worst). Use **+ Add parameter** for extra parameters. Changes apply on **Save**.
 - The matrix opens in a simplified view. Turn on **Detailed view** (above the table, and in the print view) to also show the parameters and the colored dots marking which combinations use each solution. The choice is remembered and also applies to the PDF (parameters and scale legend).
 

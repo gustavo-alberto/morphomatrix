@@ -80,7 +80,9 @@ export default {
   "editor.exportPdf": "Export PDF",
   "editor.exportBackup": "Export backup",
   "editor.actionError": "Could not complete the action.",
-  "editor.hintEditing": "Click a cell to edit the solution. Select a combination to choose solutions.",
+  "editor.hintEditing":
+    "Click a cell to edit the solution, or paste (Ctrl+V) or drag an image onto it. Select a combination to choose solutions.",
+  "editor.pasteNoTarget": "Hover over or select a cell before pasting the image.",
   "editor.hintSelecting":
     'Click a cell to select or unselect it in "{name}" (one solution per function). Use ✎ to edit the solution.',
 
@@ -169,8 +171,16 @@ export default {
   "cell.removePhoto": "Remove photo",
   "cell.removePhotoMessage": "The photo of this solution will be removed when you save.",
   "cell.remove": "Remove",
-  "cell.photoHint": "JPG, PNG or WebP, up to 5MB.",
-  "cell.invalidType": "Invalid format. Use a JPG, PNG or WebP photo.",
+  "cell.photoHint":
+    "Upload, paste (Ctrl+V) or drag an image. JPG, PNG or WebP; images over 5MB are reduced automatically.",
+  "cell.invalidType": "Invalid format. Use a JPG, PNG or WebP image.",
+  "cell.dropHere": "Drop the image here",
+  "cell.processing": "Processing image…",
+  "cell.pendingPhoto": "New photo ready. Click Save to apply.",
+  "cell.convertedPhoto": "Image reduced to WebP ({size}) to fit the limit. Click Save to apply.",
+  "cell.shrinkFailed": "Could not reduce the image below 5MB.",
+  "cell.remoteImage":
+    "Could not get the image dragged from another website. Use \"Copy image\" and paste it here with Ctrl+V, or save the file and drag it.",
   "cell.tooLarge": "The photo exceeds the 5MB limit.",
   "cell.solutionName": "Solution name",
   "cell.namePlaceholder": "E.g. Electric motor",

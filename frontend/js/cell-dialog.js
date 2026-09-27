@@ -5,6 +5,15 @@
 
 import { api } from "./api.js";
 import { getLanguage, t } from "./i18n.js";
+import {
+  ACCEPTED_TYPES,
+  ImageInputError,
+  fileFromDrop,
+  imageFromClipboard,
+  isImageDrag,
+  isTextPaste,
+  prepareImage,
+} from "./image-input.js";
 import { NAME_MAX_LENGTH, confirmDialog, el, errorMessage, toast } from "./ui.js";
 import {
   DEFAULT_PARAMETER_VALUE,
@@ -15,8 +24,17 @@ import {
   photoUrl,
 } from "./matrix-utils.js";
 
-const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
-const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const sizeFormat = new Intl.NumberFormat(getLanguage(), { maximumFractionDigits: 1 });
+const formatMegabytes = (bytes) => `${sizeFormat.format(bytes / (1024 * 1024))} MB`;
+
+/** User-facing message for an image that could not be used. */
+export function imageErrorMessage(error) {
+  if (error instanceof ImageInputError) {
+    if (error.reason === "remote") return t("cell.remoteImage");
+    if (error.reason === "size") return t("cell.shrinkFailed");
+  }
+  return t("cell.invalidType");
+}
 
 // Local id for each parameter row in the dialog (not the parameter `key`).
 let uidCounter = 0;
@@ -25,8 +43,10 @@ const nextUid = () => `p${++uidCounter}`;
 /**
  * Open the dialog. Resolves to the updated matrix if something was saved,
  * or null if the user cancelled without changes being persisted.
+ * `initialFile` (from a paste/drop on the table) is loaded as the pending
+ * photo; like any photo change, it is only uploaded on Save.
  */
-export function openCellDialog(matrix, row, column) {
+export function openCellDialog(matrix, row, column, { initialFile = null } = {}) {
   return new Promise((resolve) => {
     const original = getCell(matrix, row.id, column.id);
     let result = null;
@@ -34,8 +54,10 @@ export function openCellDialog(matrix, row, column) {
     // --- Photo --------------------------------------------------------------
 
     const photo = { pendingFile: null, previewUrl: null, remove: false };
-    const preview = el("div", { class: "photo-preview" });
-    const fileInput = el("input", { type: "file", accept: PHOTO_TYPES.join(","), hidden: true });
+    const preview = el("div", { class: "photo-preview", "data-drop-label": t("cell.dropHere") });
+    // Any image the browser can decode is accepted here; others are converted.
+    const fileInput = el("input", { type: "file", accept: [...ACCEPTED_TYPES, "image/*"].join(","), hidden: true });
+    const photoStatus = el("p", { class: "photo-status", role: "status" });
     const uploadButton = el("button", { type: "button", class: "btn" });
     const removeButton = el("button", { type: "button", class: "btn btn-danger-outline", text: t("cell.removePhoto") });
 
@@ -62,24 +84,40 @@ export function openCellDialog(matrix, row, column) {
       photo.previewUrl = null;
     }
 
+    let processing = false;
+
+    /** Single entry point for picked, pasted and dropped images. */
+    async function setPendingFile(file) {
+      if (processing || isSaving) return;
+      processing = true;
+      saveButton.disabled = true;
+      uploadButton.disabled = true;
+      photoStatus.textContent = t("cell.processing");
+      try {
+        const { file: ready, converted } = await prepareImage(file);
+        clearPending();
+        photo.pendingFile = ready;
+        photo.previewUrl = URL.createObjectURL(ready);
+        photo.remove = false;
+        renderPhoto();
+        photoStatus.textContent = converted
+          ? t("cell.convertedPhoto", { size: formatMegabytes(ready.size) })
+          : t("cell.pendingPhoto");
+      } catch (error) {
+        photoStatus.textContent = photo.pendingFile ? t("cell.pendingPhoto") : "";
+        toast(imageErrorMessage(error), "error");
+      } finally {
+        processing = false;
+        saveButton.disabled = false;
+        uploadButton.disabled = false;
+      }
+    }
+
     uploadButton.addEventListener("click", () => fileInput.click());
     fileInput.addEventListener("change", () => {
       const [file] = fileInput.files;
       fileInput.value = "";
-      if (!file) return;
-      if (!PHOTO_TYPES.includes(file.type)) {
-        toast(t("cell.invalidType"), "error");
-        return;
-      }
-      if (file.size > MAX_PHOTO_BYTES) {
-        toast(t("cell.tooLarge"), "error");
-        return;
-      }
-      clearPending();
-      photo.pendingFile = file;
-      photo.previewUrl = URL.createObjectURL(file);
-      photo.remove = false;
-      renderPhoto();
+      if (file) setPendingFile(file);
     });
 
     removeButton.addEventListener("click", async () => {
@@ -93,6 +131,7 @@ export function openCellDialog(matrix, row, column) {
       clearPending();
       photo.remove = Boolean(original.photo);
       renderPhoto();
+      photoStatus.textContent = "";
       uploadButton.focus();
     });
 
@@ -222,6 +261,7 @@ export function openCellDialog(matrix, row, column) {
 
     async function save(event) {
       event.preventDefault();
+      if (processing) return; // wait for the pasted/dropped image to be ready
       const problem = validate();
       formError.hidden = !problem;
       formError.textContent = problem ?? "";
@@ -270,6 +310,7 @@ export function openCellDialog(matrix, row, column) {
         "section",
         { class: "cell-section", "aria-label": t("cell.photoSection") },
         preview,
+        photoStatus,
         el("div", { class: "photo-actions" }, uploadButton, removeButton, fileInput),
         el("p", { class: "hint", text: t("cell.photoHint") }),
       ),
@@ -302,6 +343,45 @@ export function openCellDialog(matrix, row, column) {
     dialog.addEventListener("cancel", (event) => {
       if (isSaving) event.preventDefault();
     });
+
+    // Ctrl+V anywhere in the dialog: an image on the clipboard becomes the
+    // pending photo. Plain text pasted into a text field is left alone.
+    dialog.addEventListener("paste", (event) => {
+      if (isTextPaste(event)) return;
+      const file = imageFromClipboard(event.clipboardData);
+      if (!file) return;
+      event.preventDefault();
+      setPendingFile(file);
+    });
+
+    // Drop anywhere in the dialog; the preview shows where to drop.
+    let dragDepth = 0;
+    const setDropActive = (active) => preview.classList.toggle("is-drop-target", active);
+    dialog.addEventListener("dragenter", (event) => {
+      if (!isImageDrag(event.dataTransfer)) return;
+      dragDepth += 1;
+      setDropActive(true);
+    });
+    dialog.addEventListener("dragleave", () => {
+      dragDepth = Math.max(0, dragDepth - 1);
+      if (!dragDepth) setDropActive(false);
+    });
+    dialog.addEventListener("dragover", (event) => {
+      if (!isImageDrag(event.dataTransfer)) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+    });
+    dialog.addEventListener("drop", (event) => {
+      if (!isImageDrag(event.dataTransfer)) return;
+      event.preventDefault();
+      dragDepth = 0;
+      setDropActive(false);
+      try {
+        setPendingFile(fileFromDrop(event.dataTransfer));
+      } catch (error) {
+        toast(imageErrorMessage(error), "error");
+      }
+    });
     dialog.addEventListener("close", () => {
       clearPending();
       dialog.remove();
@@ -313,5 +393,6 @@ export function openCellDialog(matrix, row, column) {
     document.body.append(dialog);
     dialog.showModal();
     nameInput.focus();
+    if (initialFile) setPendingFile(initialFile);
   });
 }
